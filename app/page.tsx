@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -33,7 +34,7 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'chat' | 'log' | 'supplements' | 'nalaz' | 'dashboard'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'log' | 'supplements' | 'labs' | 'dashboard'>('chat');
   const [logType, setLogType] = useState<LogType>('meal');
   const [logInput, setLogInput] = useState('');
   const [logSaved, setLogSaved] = useState(false);
@@ -46,6 +47,8 @@ export default function Home() {
   const [preview, setPreview] = useState('');
   const [logs, setLogs] = useState<DailyLog[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [showLogSheet, setShowLogSheet] = useState(false);
+  const [streak] = useState(7);
   const fileRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -54,13 +57,8 @@ export default function Home() {
   }, [messages]);
 
   useEffect(() => {
-    if (activeTab === 'supplements') {
-      fetchSupplements();
-      fetchSupplementLogs();
-    }
-    if (activeTab === 'dashboard' || activeTab === 'log') {
-      fetchLogs();
-    }
+    if (activeTab === 'supplements') { fetchSupplements(); fetchSupplementLogs(); }
+    if (activeTab === 'dashboard' || activeTab === 'log') { fetchLogs(); }
   }, [activeTab, selectedDate]);
 
   const fetchSupplements = async () => {
@@ -138,6 +136,7 @@ export default function Home() {
     });
     setLogInput('');
     setLogSaved(true);
+    setShowLogSheet(false);
     setTimeout(() => setLogSaved(false), 2000);
     fetchLogs();
   };
@@ -167,7 +166,7 @@ export default function Home() {
     { type: 'supplement', label: 'Suplement', emoji: '💊' },
     { type: 'sleep', label: 'San', emoji: '😴' },
     { type: 'energy', label: 'Energija', emoji: '⚡' },
-    { type: 'symptom', label: 'Simptom', emoji: '🩺' },
+    { type: 'symptom', label: 'Simptom', emoji: '⚠️' },
   ];
 
   const logColors: Record<string, string> = {
@@ -186,268 +185,507 @@ export default function Home() {
     symptom: 'bg-red-500/10',
   };
 
-  const tabs = [
-    { tab: 'chat', label: '💬', title: 'Chat' },
-    { tab: 'log', label: '📋', title: 'Log' },
-    { tab: 'supplements', label: '💊', title: 'Supl.' },
-    { tab: 'nalaz', label: '🔬', title: 'Nalaz' },
-    { tab: 'dashboard', label: '📊', title: 'Stats' },
-  ];
-
   const takenCount = supplements.filter(s => isSupplementTaken(s.id)).length;
 
+  const chartData = [
+    { day: 'Mon', energy: 6, sleep: 7 },
+    { day: 'Tue', energy: 7, sleep: 6 },
+    { day: 'Wed', energy: 5, sleep: 8 },
+    { day: 'Thu', energy: 8, sleep: 7 },
+    { day: 'Fri', energy: 7, sleep: 6 },
+    { day: 'Sat', energy: 9, sleep: 8 },
+    { day: 'Sun', energy: 8, sleep: 7 },
+  ];
+
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+
+  const tabs = [
+    { tab: 'chat', emoji: '💬', label: 'Chat' },
+    { tab: 'log', emoji: '＋', label: 'Log' },
+    { tab: 'dashboard', emoji: '📊', label: 'Stats' },
+    { tab: 'supplements', emoji: '💊', label: 'Suppl' },
+    { tab: 'labs', emoji: '🔬', label: 'Labs' },
+  ];
+
   return (
-    <main className="flex flex-col h-screen bg-gray-950 text-white max-w-2xl mx-auto">
-      <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+    <div style={{ backgroundColor: '#0A0A0A', minHeight: '100vh', color: '#F5F5F5' }} className="flex flex-col max-w-2xl mx-auto relative">
+
+      {/* HEADER */}
+      <div style={{ backgroundColor: 'rgba(17,17,17,0.8)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+        className="sticky top-0 z-40 px-5 py-4 flex items-center justify-between backdrop-blur-xl">
         <div>
-          <h1 className="text-lg font-bold text-green-400">🧠 Health Brain</h1>
-          <p className="text-gray-500 text-xs">{new Date().toLocaleDateString('bs-BA', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+          <p style={{ color: '#9CA3AF', fontSize: '11px', letterSpacing: '0.05em' }} className="uppercase">{today}</p>
+          <h1 style={{ color: '#22C55E', fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em' }}>
+            🧠 Health Brain
+          </h1>
         </div>
-        <div className="flex gap-2 text-xs">
-          <div className="bg-gray-800 px-2 py-1 rounded-lg text-center">
-            <p className="text-green-400 font-bold">{takenCount}/{supplements.length}</p>
-            <p className="text-gray-500">supl.</p>
+        <div className="flex items-center gap-3">
+          <div style={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.08)' }} className="px-3 py-1.5 rounded-full flex items-center gap-1.5">
+            <span style={{ fontSize: '13px' }}>🔥</span>
+            <span style={{ color: '#F5F5F5', fontSize: '13px', fontWeight: 600 }}>{streak}</span>
           </div>
-          <div className="bg-gray-800 px-2 py-1 rounded-lg text-center">
-            <p className="text-blue-400 font-bold">{logs.length}</p>
-            <p className="text-gray-500">logova</p>
+          <div style={{ width: 36, height: 36, backgroundColor: '#1A1A1A', border: '2px solid #22C55E', borderRadius: '50%' }}
+            className="flex items-center justify-center">
+            <span style={{ fontSize: '16px' }}>👤</span>
           </div>
         </div>
       </div>
 
-      <div className="flex border-b border-gray-800">
-        {tabs.map(({ tab, label, title }) => (
-          <button key={tab} onClick={() => setActiveTab(tab as any)}
-            className={`flex-1 py-2 text-xs font-medium transition-all ${activeTab === tab ? 'text-green-400 border-b-2 border-green-400 bg-green-400/5' : 'text-gray-500 hover:text-gray-300'}`}>
-            <div>{label}</div>
-            <div>{title}</div>
-          </button>
-        ))}
-      </div>
+      {/* CONTENT */}
+      <div className="flex-1 overflow-hidden flex flex-col" style={{ paddingBottom: '80px' }}>
 
-      {activeTab === 'chat' && (
-        <>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.length === 0 && (
-              <div className="text-center text-gray-500 mt-20">
-                <p className="text-5xl mb-4">💚</p>
-                <p className="text-lg font-medium text-gray-400">Kako se danas osjećaš?</p>
-                <p className="text-sm mt-2">Pitaj me za analizu ishrane, savjete ili unesi simptome.</p>
-              </div>
-            )}
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                {msg.role === 'assistant' && (
-                  <div className="w-7 h-7 rounded-full bg-green-600 flex items-center justify-center text-xs mr-2 mt-1 flex-shrink-0">🧠</div>
-                )}
-                <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-green-600 text-white rounded-br-sm' : 'bg-gray-800 text-gray-100 rounded-bl-sm'}`}>
-                  {msg.content}
+        {/* CHAT TAB */}
+        {activeTab === 'chat' && (
+          <div className="flex flex-col h-full">
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+              {messages.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full text-center py-20">
+                  <div style={{
+                    width: 72, height: 72, borderRadius: '50%',
+                    background: 'radial-gradient(circle, rgba(34,197,94,0.3), rgba(59,130,246,0.1))',
+                    border: '2px solid rgba(34,197,94,0.4)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '28px', marginBottom: '20px',
+                    boxShadow: '0 0 30px rgba(34,197,94,0.2)'
+                  }}>🧠</div>
+                  <p style={{ color: '#F5F5F5', fontSize: '20px', fontWeight: 600, marginBottom: '8px' }}>How are you feeling?</p>
+                  <p style={{ color: '#9CA3AF', fontSize: '14px' }}>Ask me anything about your health.</p>
                 </div>
-              </div>
-            ))}
-            {loading && (
-              <div className="flex justify-start">
-                <div className="w-7 h-7 rounded-full bg-green-600 flex items-center justify-center text-xs mr-2">🧠</div>
-                <div className="bg-gray-800 p-3 rounded-2xl rounded-bl-sm">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+              )}
+              {messages.map((msg, i) => (
+                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} items-end gap-2`}
+                  style={{ animation: 'fadeSlideUp 0.3s ease forwards' }}>
+                  {msg.role === 'assistant' && (
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%',
+                      background: 'radial-gradient(circle, rgba(59,130,246,0.6), rgba(34,197,94,0.3))',
+                      border: '1px solid rgba(59,130,246,0.5)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '12px', flexShrink: 0,
+                      boxShadow: '0 0 12px rgba(59,130,246,0.3)'
+                    }}>🧠</div>
+                  )}
+                  <div style={{
+                    maxWidth: '78%', padding: '12px 16px', borderRadius: '18px',
+                    fontSize: '14px', lineHeight: '1.6',
+                    ...(msg.role === 'user' ? {
+                      background: 'linear-gradient(135deg, #22C55E, #16A34A)',
+                      color: '#fff',
+                      borderBottomRightRadius: '4px',
+                      boxShadow: '0 4px 20px rgba(34,197,94,0.25)'
+                    } : {
+                      backgroundColor: '#1A1A1A',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                      color: '#F5F5F5',
+                      borderBottomLeftRadius: '4px',
+                    })
+                  }}>
+                    {msg.content}
                   </div>
                 </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-          <div className="p-4 border-t border-gray-800 flex gap-2">
-            <input type="text" value={input} onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-              placeholder="Napiši poruku..."
-              className="flex-1 bg-gray-800 text-white rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-green-500 text-sm" />
-            <button onClick={sendMessage} disabled={loading}
-              className="bg-green-600 hover:bg-green-500 disabled:opacity-50 px-5 py-3 rounded-xl font-medium transition-colors">
-              ➤
-            </button>
-          </div>
-        </>
-      )}
+              ))}
+              {loading && (
+                <div className="flex items-end gap-2">
+                  <div style={{
+                    width: 28, height: 28, borderRadius: '50%',
+                    background: 'radial-gradient(circle, rgba(59,130,246,0.6), rgba(34,197,94,0.3))',
+                    border: '1px solid rgba(59,130,246,0.5)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px',
+                    boxShadow: '0 0 12px rgba(59,130,246,0.3)'
+                  }}>🧠</div>
+                  <div style={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '18px', borderBottomLeftRadius: '4px', padding: '14px 18px' }}>
+                    <div className="flex gap-1.5">
+                      {[0, 1, 2].map(i => (
+                        <div key={i} style={{
+                          width: 7, height: 7, borderRadius: '50%', backgroundColor: '#9CA3AF',
+                          animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`
+                        }} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
 
-      {activeTab === 'log' && (
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="flex gap-2 mb-4 flex-wrap">
-            {logTypes.map(({ type, label, emoji }) => (
-              <button key={type} onClick={() => setLogType(type)}
-                className={`px-3 py-2 rounded-xl text-xs font-medium transition-colors ${logType === type ? 'bg-green-600 text-white' : 'bg-gray-800 text-gray-300'}`}>
-                {emoji} {label}
-              </button>
-            ))}
+            {/* CHAT INPUT */}
+            <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(10,10,10,0.9)' }}
+              className="backdrop-blur-xl">
+              <div className="flex gap-3 items-center">
+                <input
+                  type="text" value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                  placeholder="Message Health Brain..."
+                  style={{
+                    flex: 1, backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '24px', padding: '12px 20px', color: '#F5F5F5', fontSize: '14px',
+                    outline: 'none'
+                  }}
+                />
+                <button onClick={sendMessage} disabled={loading} style={{
+                  width: 46, height: 46, borderRadius: '50%', flexShrink: 0,
+                  background: loading ? '#1A1A1A' : 'linear-gradient(135deg, #22C55E, #16A34A)',
+                  border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '18px', boxShadow: loading ? 'none' : '0 4px 20px rgba(34,197,94,0.35)',
+                  transition: 'all 0.2s ease'
+                }}>➤</button>
+              </div>
+            </div>
           </div>
-          <div className="bg-gray-900 rounded-2xl p-4 mb-4">
-            <textarea value={logInput} onChange={(e) => setLogInput(e.target.value)}
-              placeholder={
-                logType === 'meal' ? 'npr. Piletina 200g, riža 100g...' :
-                logType === 'supplement' ? 'npr. Vitamin D 5000IU...' :
-                logType === 'sleep' ? 'npr. Spavao 7h, odmoran...' :
-                logType === 'energy' ? 'npr. Energija 7/10...' :
-                'npr. Glavobolja ujutro...'
-              }
-              rows={3}
-              className="w-full bg-gray-800 text-white rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-green-500 resize-none text-sm" />
-            <button onClick={saveLog} className="mt-3 w-full bg-green-600 hover:bg-green-500 py-3 rounded-xl font-medium transition-colors text-sm">
-              {logSaved ? '✅ Sačuvano!' : 'Sačuvaj'}
-            </button>
-          </div>
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-gray-400 text-sm font-medium">Historija</p>
+        )}
+
+        {/* LOG TAB */}
+        {activeTab === 'log' && (
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#F5F5F5' }}>Daily Log</h2>
+                <p style={{ color: '#9CA3AF', fontSize: '13px' }}>Track your health data</p>
+              </div>
               <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
-                className="bg-gray-800 text-white rounded-lg px-3 py-1 text-xs outline-none" />
+                style={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '8px 12px', color: '#F5F5F5', fontSize: '12px', outline: 'none' }} />
             </div>
-            <div className="space-y-2">
-              {logs.length === 0 && <p className="text-gray-500 text-sm text-center py-4">Nema logova za ovaj dan.</p>}
-              {logs.map((log) => {
-                const logInfo = logTypes.find(l => l.type === log.type);
-                return (
-                  <div key={log.id} className={`p-3 rounded-xl border-l-4 ${logColors[log.type]} ${logBg[log.type]}`}>
-                    <div className="flex justify-between items-start">
-                      <p className="text-xs text-gray-400">{logInfo?.emoji} {logInfo?.label}</p>
-                      <p className="text-xs text-gray-500">{new Date(log.created_at).toLocaleTimeString('bs-BA', { hour: '2-digit', minute: '2-digit' })}</p>
-                    </div>
-                    <p className="text-sm text-gray-200 mt-1">{log.data.note}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
 
-      {activeTab === 'supplements' && (
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="flex justify-between items-center mb-4">
+            {/* Log type selector */}
+            <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
+              {logTypes.map(({ type, label, emoji }) => (
+                <button key={type} onClick={() => setLogType(type)} style={{
+                  padding: '8px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: 500,
+                  whiteSpace: 'nowrap', border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+                  ...(logType === type ? {
+                    background: 'linear-gradient(135deg, #22C55E, #16A34A)',
+                    color: '#fff', boxShadow: '0 4px 15px rgba(34,197,94,0.3)'
+                  } : {
+                    backgroundColor: '#1A1A1A', color: '#9CA3AF',
+                    border: '1px solid rgba(255,255,255,0.06)'
+                  })
+                }}>{emoji} {label}</button>
+              ))}
+            </div>
+
+            {/* Input area */}
+            <div style={{ backgroundColor: '#111111', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '16px', marginBottom: '20px' }}>
+              <textarea value={logInput} onChange={(e) => setLogInput(e.target.value)}
+                placeholder={
+                  logType === 'meal' ? 'e.g. Chicken 200g, rice 100g, broccoli...' :
+                  logType === 'supplement' ? 'e.g. Vitamin D 5000IU, Omega-3 2g...' :
+                  logType === 'sleep' ? 'e.g. 7h sleep, woke up 2x, felt rested...' :
+                  logType === 'energy' ? 'e.g. Energy 7/10, tired after lunch...' :
+                  'e.g. Headache in morning, gone after coffee...'
+                }
+                rows={3}
+                style={{
+                  width: '100%', backgroundColor: 'transparent', border: 'none',
+                  color: '#F5F5F5', fontSize: '14px', resize: 'none', outline: 'none',
+                  lineHeight: '1.6'
+                }} />
+              <button onClick={saveLog} style={{
+                marginTop: '12px', width: '100%', padding: '14px',
+                background: 'linear-gradient(135deg, #22C55E, #16A34A)',
+                border: 'none', borderRadius: '14px', color: '#fff',
+                fontSize: '14px', fontWeight: 600, cursor: 'pointer',
+                boxShadow: '0 4px 20px rgba(34,197,94,0.3)', transition: 'all 0.2s'
+              }}>
+                {logSaved ? '✅ Saved!' : 'Save Log'}
+              </button>
+            </div>
+
+            {/* History */}
             <div>
-              <p className="text-white font-medium">Suplementi</p>
-              <p className="text-gray-400 text-xs">{takenCount}/{supplements.length} uzeto danas</p>
+              <p style={{ color: '#9CA3AF', fontSize: '13px', fontWeight: 500, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>History</p>
+              <div className="space-y-3">
+                {logs.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '40px', color: '#9CA3AF', fontSize: '14px' }}>
+                    No logs for this day.
+                  </div>
+                )}
+                {logs.map((log) => {
+                  const logInfo = logTypes.find(l => l.type === log.type);
+                  return (
+                    <div key={log.id} style={{
+                      backgroundColor: '#111111', borderRadius: '16px', padding: '14px 16px',
+                      borderLeft: `3px solid ${log.type === 'meal' ? '#F97316' : log.type === 'supplement' ? '#3B82F6' : log.type === 'sleep' ? '#A855F7' : log.type === 'energy' ? '#EAB308' : '#EF4444'}`
+                    }}>
+                      <div className="flex justify-between items-center mb-1">
+                        <span style={{ fontSize: '12px', color: '#9CA3AF' }}>{logInfo?.emoji} {logInfo?.label}</span>
+                        <span style={{ fontSize: '11px', color: '#6B7280' }}>{new Date(log.created_at).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      <p style={{ fontSize: '14px', color: '#F5F5F5', lineHeight: '1.5' }}>{log.data.note}</p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <button onClick={() => setAddingSupp(!addingSupp)} className="bg-green-600 hover:bg-green-500 px-3 py-2 rounded-xl text-sm font-medium">
-              + Dodaj
-            </button>
           </div>
-          {supplements.length > 0 && (
-            <div className="bg-gray-900 rounded-2xl p-3 mb-4">
-              <div className="flex justify-between text-xs text-gray-400 mb-2">
-                <span>Progres danas</span>
-                <span>{Math.round((takenCount / supplements.length) * 100)}%</span>
-              </div>
-              <div className="w-full bg-gray-700 rounded-full h-2">
-                <div className="bg-green-500 h-2 rounded-full transition-all" style={{ width: `${(takenCount / supplements.length) * 100}%` }}></div>
+        )}
+
+        {/* DASHBOARD TAB */}
+        {activeTab === 'dashboard' && (
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            <div className="mb-5">
+              <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#F5F5F5' }}>Overview</h2>
+              <p style={{ color: '#9CA3AF', fontSize: '13px' }}>Your health at a glance</p>
+            </div>
+
+            {/* Insight cards */}
+            <div className="grid grid-cols-2 gap-3 mb-5">
+              {[
+                { label: 'Energy', value: `${logs.filter(l => l.type === 'energy').length}`, sub: 'logs today', color: '#EAB308', emoji: '⚡' },
+                { label: 'Sleep', value: `${logs.filter(l => l.type === 'sleep').length}`, sub: 'logs today', color: '#A855F7', emoji: '😴' },
+                { label: 'Meals', value: `${logs.filter(l => l.type === 'meal').length}`, sub: 'logged today', color: '#F97316', emoji: '🍽️' },
+                { label: 'Supplements', value: `${takenCount}/${supplements.length}`, sub: 'taken today', color: '#22C55E', emoji: '💊' },
+              ].map((card) => (
+                <div key={card.label} style={{
+                  backgroundColor: '#111111', border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: '20px', padding: '16px'
+                }}>
+                  <p style={{ fontSize: '22px', marginBottom: '6px' }}>{card.emoji}</p>
+                  <p style={{ fontSize: '24px', fontWeight: 700, color: card.color }}>{card.value}</p>
+                  <p style={{ fontSize: '12px', color: '#9CA3AF' }}>{card.label}</p>
+                  <p style={{ fontSize: '11px', color: '#6B7280' }}>{card.sub}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Energy chart */}
+            <div style={{ backgroundColor: '#111111', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '16px', marginBottom: '16px' }}>
+              <p style={{ fontSize: '14px', fontWeight: 600, color: '#F5F5F5', marginBottom: '16px' }}>Energy & Sleep — 7 days</p>
+              <ResponsiveContainer width="100%" height={160}>
+                <LineChart data={chartData}>
+                  <XAxis dataKey="day" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis hide />
+                  <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#F5F5F5', fontSize: '12px' }} />
+                  <Line type="monotone" dataKey="energy" stroke="#22C55E" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="sleep" stroke="#3B82F6" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+              <div className="flex gap-4 mt-2">
+                <div className="flex items-center gap-1.5"><div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#22C55E' }} /><span style={{ fontSize: '11px', color: '#9CA3AF' }}>Energy</span></div>
+                <div className="flex items-center gap-1.5"><div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#3B82F6' }} /><span style={{ fontSize: '11px', color: '#9CA3AF' }}>Sleep</span></div>
               </div>
             </div>
-          )}
-          {addingSupp && (
-            <div className="bg-gray-900 rounded-2xl p-4 mb-4 space-y-3">
-              <input placeholder="Naziv (npr. Vitamin D3)" value={newSupp.name} onChange={(e) => setNewSupp({ ...newSupp, name: e.target.value })} className="w-full bg-gray-800 text-white rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-green-500 text-sm" />
-              <input placeholder="Doza (npr. 5000 IU)" value={newSupp.dose} onChange={(e) => setNewSupp({ ...newSupp, dose: e.target.value })} className="w-full bg-gray-800 text-white rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-green-500 text-sm" />
-              <input placeholder="Kada (npr. Ujutro s hranom)" value={newSupp.timing} onChange={(e) => setNewSupp({ ...newSupp, timing: e.target.value })} className="w-full bg-gray-800 text-white rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-green-500 text-sm" />
-              <button onClick={addSupplement} className="w-full bg-green-600 hover:bg-green-500 py-3 rounded-xl font-medium text-sm">Sačuvaj</button>
+
+            {/* Bar chart */}
+            <div style={{ backgroundColor: '#111111', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '16px' }}>
+              <p style={{ fontSize: '14px', fontWeight: 600, color: '#F5F5F5', marginBottom: '16px' }}>Weekly Activity</p>
+              <ResponsiveContainer width="100%" height={120}>
+                <BarChart data={chartData}>
+                  <XAxis dataKey="day" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis hide />
+                  <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#F5F5F5', fontSize: '12px' }} />
+                  <Bar dataKey="energy" fill="#22C55E" radius={[6, 6, 0, 0]} opacity={0.8} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-          )}
-          <div className="space-y-3">
-            {supplements.length === 0 && (
-              <div className="text-center text-gray-500 mt-10">
-                <p className="text-3xl mb-2">💊</p>
-                <p className="text-sm">Dodaj svoje suplemente!</p>
+          </div>
+        )}
+
+        {/* SUPPLEMENTS TAB */}
+        {activeTab === 'supplements' && (
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            <div className="flex justify-between items-center mb-5">
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#F5F5F5' }}>Supplements</h2>
+                <p style={{ color: '#9CA3AF', fontSize: '13px' }}>{takenCount}/{supplements.length} taken today</p>
+              </div>
+              <button onClick={() => setAddingSupp(!addingSupp)} style={{
+                backgroundColor: '#1A1A1A', border: '1px solid rgba(34,197,94,0.3)',
+                borderRadius: '14px', padding: '8px 16px', color: '#22C55E',
+                fontSize: '13px', fontWeight: 600, cursor: 'pointer'
+              }}>+ Add</button>
+            </div>
+
+            {supplements.length > 0 && (
+              <div style={{ backgroundColor: '#111111', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '16px', marginBottom: '16px' }}>
+                <div className="flex justify-between mb-2">
+                  <span style={{ fontSize: '13px', color: '#9CA3AF' }}>Today's progress</span>
+                  <span style={{ fontSize: '13px', color: '#22C55E', fontWeight: 600 }}>{Math.round((takenCount / supplements.length) * 100)}%</span>
+                </div>
+                <div style={{ backgroundColor: '#1A1A1A', borderRadius: '8px', height: '6px', overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%', borderRadius: '8px',
+                    background: 'linear-gradient(90deg, #22C55E, #A3E635)',
+                    width: `${(takenCount / supplements.length) * 100}%`,
+                    transition: 'width 0.5s ease',
+                    boxShadow: '0 0 10px rgba(34,197,94,0.5)'
+                  }} />
+                </div>
               </div>
             )}
-            {supplements.map((supp) => {
-              const taken = isSupplementTaken(supp.id);
-              return (
-                <div key={supp.id} className={`flex items-center justify-between p-4 rounded-2xl transition-all ${taken ? 'bg-green-900/20 border border-green-700/50' : 'bg-gray-900'}`}>
-                  <div>
-                    <p className={`font-medium text-sm ${taken ? 'text-green-400' : 'text-white'}`}>{supp.name}</p>
-                    <p className="text-gray-400 text-xs mt-0.5">{supp.dose} · {supp.timing}</p>
-                  </div>
-                  <button onClick={() => toggleSupplement(supp.id, !taken)}
-                    className={`px-4 py-2 rounded-xl text-xs font-medium transition-all ${taken ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
-                    {taken ? '✅ Uzeto' : 'Označi'}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
-      {activeTab === 'nalaz' && (
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="bg-gray-900 rounded-2xl p-4 mb-4">
-            <p className="text-gray-400 text-sm mb-3">📸 Uploadaj sliku medicinskog nalaza</p>
-            <input ref={fileRef} type="file" accept="image/*" onChange={analyzeFile} className="hidden" />
-            <button onClick={() => fileRef.current?.click()}
-              className="w-full border-2 border-dashed border-gray-700 hover:border-green-500 rounded-xl py-8 text-gray-400 hover:text-green-400 transition-colors text-sm">
-              {preview ? '📷 Promijeni sliku' : '📷 Odaberi sliku nalaza'}
-            </button>
-          </div>
-          {preview && <img src={preview} alt="Nalaz" className="w-full rounded-xl max-h-48 object-cover mb-4" />}
-          {analyzing && (
-            <div className="bg-gray-900 rounded-2xl p-6 text-center text-gray-400">
-              <p className="text-3xl mb-2">🔬</p>
-              <p className="text-sm">Analiziram nalaz...</p>
-            </div>
-          )}
-          {analysis && (
-            <div className="bg-gray-900 rounded-2xl p-4">
-              <p className="text-green-400 font-medium mb-3">📋 Analiza nalaza:</p>
-              <p className="text-gray-100 text-sm whitespace-pre-wrap">{analysis}</p>
-            </div>
-          )}
-        </div>
-      )}
+            {addingSupp && (
+              <div style={{ backgroundColor: '#111111', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '16px', marginBottom: '16px' }} className="space-y-3">
+                {['name', 'dose', 'timing'].map((field) => (
+                  <input key={field}
+                    placeholder={field === 'name' ? 'Name (e.g. Vitamin D3)' : field === 'dose' ? 'Dose (e.g. 5000 IU)' : 'When (e.g. Morning with food)'}
+                    value={newSupp[field as keyof typeof newSupp]}
+                    onChange={(e) => setNewSupp({ ...newSupp, [field]: e.target.value })}
+                    style={{
+                      width: '100%', backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: '12px', padding: '12px 16px', color: '#F5F5F5', fontSize: '14px', outline: 'none'
+                    }} />
+                ))}
+                <button onClick={addSupplement} style={{
+                  width: '100%', padding: '14px',
+                  background: 'linear-gradient(135deg, #22C55E, #16A34A)',
+                  border: 'none', borderRadius: '14px', color: '#fff',
+                  fontSize: '14px', fontWeight: 600, cursor: 'pointer'
+                }}>Save Supplement</button>
+              </div>
+            )}
 
-      {activeTab === 'dashboard' && (
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-white font-medium">Statistike</p>
-            <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-gray-800 text-white rounded-lg px-3 py-1 text-xs outline-none" />
-          </div>
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            {logTypes.map(({ type, emoji, label }) => {
-              const count = logs.filter(l => l.type === type).length;
-              return (
-                <div key={type} className={`p-4 rounded-2xl ${logBg[type]} border ${logColors[type]} border-opacity-30`}>
-                  <p className="text-2xl mb-1">{emoji}</p>
-                  <p className="text-xl font-bold text-white">{count}</p>
-                  <p className="text-xs text-gray-400">{label}</p>
+            <div className="space-y-3">
+              {supplements.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '60px 20px', color: '#9CA3AF' }}>
+                  <p style={{ fontSize: '40px', marginBottom: '12px' }}>💊</p>
+                  <p style={{ fontSize: '15px', fontWeight: 500, marginBottom: '6px', color: '#F5F5F5' }}>No supplements yet</p>
+                  <p style={{ fontSize: '13px' }}>Add your first supplement above</p>
                 </div>
-              );
-            })}
-            <div className="p-4 rounded-2xl bg-green-500/10 border border-green-500/30">
-              <p className="text-2xl mb-1">💊</p>
-              <p className="text-xl font-bold text-white">{takenCount}/{supplements.length}</p>
-              <p className="text-xs text-gray-400">Suplementi</p>
-            </div>
-          </div>
-          <div className="bg-gray-900 rounded-2xl p-4">
-            <p className="text-gray-400 text-sm font-medium mb-3">Svi logovi za dan</p>
-            <div className="space-y-2">
-              {logs.length === 0 && <p className="text-gray-500 text-sm text-center py-4">Nema logova za ovaj dan.</p>}
-              {logs.map((log) => {
-                const logInfo = logTypes.find(l => l.type === log.type);
+              )}
+              {supplements.map((supp) => {
+                const taken = isSupplementTaken(supp.id);
                 return (
-                  <div key={log.id} className={`p-3 rounded-xl border-l-4 ${logColors[log.type]}`}>
-                    <div className="flex justify-between">
-                      <p className="text-xs text-gray-400">{logInfo?.emoji} {logInfo?.label}</p>
-                      <p className="text-xs text-gray-500">{new Date(log.created_at).toLocaleTimeString('bs-BA', { hour: '2-digit', minute: '2-digit' })}</p>
+                  <div key={supp.id} style={{
+                    backgroundColor: '#111111',
+                    border: taken ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.06)',
+                    borderRadius: '20px', padding: '16px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    transition: 'all 0.3s ease',
+                    boxShadow: taken ? '0 0 20px rgba(34,197,94,0.1)' : 'none'
+                  }}>
+                    <div>
+                      <p style={{ fontSize: '15px', fontWeight: 600, color: taken ? '#22C55E' : '#F5F5F5' }}>{supp.name}</p>
+                      <p style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '2px' }}>{supp.dose} · {supp.timing}</p>
                     </div>
-                    <p className="text-sm text-gray-200 mt-1">{log.data.note}</p>
+                    <button onClick={() => toggleSupplement(supp.id, !taken)} style={{
+                      padding: '8px 18px', borderRadius: '20px', fontSize: '13px', fontWeight: 600,
+                      border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+                      ...(taken ? {
+                        background: 'linear-gradient(135deg, #22C55E, #16A34A)',
+                        color: '#fff', boxShadow: '0 4px 15px rgba(34,197,94,0.3)'
+                      } : {
+                        backgroundColor: '#1A1A1A', color: '#9CA3AF',
+                        border: '1px solid rgba(255,255,255,0.08)'
+                      })
+                    }}>{taken ? '✅ Taken' : 'Mark'}</button>
                   </div>
                 );
               })}
             </div>
           </div>
+        )}
+
+        {/* LABS TAB */}
+        {activeTab === 'labs' && (
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            <div className="mb-5">
+              <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#F5F5F5' }}>Lab Results</h2>
+              <p style={{ color: '#9CA3AF', fontSize: '13px' }}>Upload & analyze your medical reports</p>
+            </div>
+
+            <div style={{ backgroundColor: '#111111', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '16px', marginBottom: '16px' }}>
+              <input ref={fileRef} type="file" accept="image/*" onChange={analyzeFile} className="hidden" />
+              <button onClick={() => fileRef.current?.click()} style={{
+                width: '100%', padding: '32px',
+                border: '2px dashed rgba(34,197,94,0.3)', borderRadius: '16px',
+                backgroundColor: 'rgba(34,197,94,0.05)', color: '#22C55E',
+                fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s'
+              }}>
+                <p style={{ fontSize: '32px', marginBottom: '8px' }}>📋</p>
+                <p style={{ fontWeight: 600 }}>{preview ? 'Change image' : 'Upload lab result'}</p>
+                <p style={{ color: '#9CA3AF', fontSize: '12px', marginTop: '4px' }}>Tap to select image</p>
+              </button>
+            </div>
+
+            {preview && (
+              <div style={{ borderRadius: '16px', overflow: 'hidden', marginBottom: '16px' }}>
+                <img src={preview} alt="Lab result" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover' }} />
+              </div>
+            )}
+
+            {analyzing && (
+              <div style={{ backgroundColor: '#111111', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '20px', padding: '24px', textAlign: 'center' }}>
+                <p style={{ fontSize: '32px', marginBottom: '12px' }}>🔬</p>
+                <p style={{ color: '#F5F5F5', fontWeight: 600, marginBottom: '6px' }}>Analyzing...</p>
+                <p style={{ color: '#9CA3AF', fontSize: '13px' }}>AI is reading your lab results</p>
+              </div>
+            )}
+
+            {analysis && (
+              <div style={{
+                backgroundColor: '#111111',
+                border: '1px solid rgba(34,197,94,0.2)',
+                borderRadius: '20px', padding: '20px',
+                boxShadow: '0 0 30px rgba(34,197,94,0.05)'
+              }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#22C55E', boxShadow: '0 0 8px #22C55E' }} />
+                  <p style={{ fontSize: '14px', fontWeight: 600, color: '#22C55E' }}>AI Analysis</p>
+                </div>
+                <p style={{ fontSize: '14px', color: '#F5F5F5', lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>{analysis}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* BOTTOM NAVIGATION */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+        width: '100%', maxWidth: '672px',
+        backgroundColor: 'rgba(17,17,17,0.9)',
+        borderTop: '1px solid rgba(255,255,255,0.06)',
+        backdropFilter: 'blur(20px)',
+        padding: '8px 16px 12px',
+        zIndex: 50
+      }}>
+        <div className="flex justify-around">
+          {tabs.map(({ tab, emoji, label }) => {
+            const isActive = activeTab === tab;
+            const isLogTab = tab === 'log';
+            return (
+              <button key={tab} onClick={() => setActiveTab(tab as any)} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+                padding: isLogTab ? '0' : '8px 12px', border: 'none', cursor: 'pointer',
+                backgroundColor: 'transparent', transition: 'all 0.2s',
+                ...(isLogTab ? {} : {})
+              }}>
+                {isLogTab ? (
+                  <div style={{
+                    width: 50, height: 50, borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #22C55E, #16A34A)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '22px', boxShadow: '0 4px 20px rgba(34,197,94,0.4)',
+                    marginTop: '-20px'
+                  }}>＋</div>
+                ) : (
+                  <>
+                    <span style={{ fontSize: '20px', filter: isActive ? 'none' : 'grayscale(0.5)', opacity: isActive ? 1 : 0.5 }}>{emoji}</span>
+                    <span style={{ fontSize: '10px', color: isActive ? '#22C55E' : '#6B7280', fontWeight: isActive ? 600 : 400 }}>{label}</span>
+                    {isActive && <div style={{ width: 16, height: 2, backgroundColor: '#22C55E', borderRadius: '2px', boxShadow: '0 0 6px #22C55E' }} />}
+                  </>
+                )}
+              </button>
+            );
+          })}
         </div>
-      )}
-    </main>
+      </div>
+
+      <style>{`
+        @keyframes fadeSlideUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes bounce {
+          0%, 60%, 100% { transform: translateY(0); }
+          30% { transform: translateY(-6px); }
+        }
+        * { box-sizing: border-box; }
+        input::placeholder, textarea::placeholder { color: #6B7280; }
+        ::-webkit-scrollbar { width: 0px; }
+      `}</style>
+    </div>
   );
 }
