@@ -67,7 +67,7 @@ export default function ChatTab({ profile }: ChatTabProps) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
 
       {/* Context Ribbon */}
       <div style={{
@@ -90,7 +90,7 @@ export default function ChatTab({ profile }: ChatTabProps) {
       </div>
 
       {/* Messages */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', paddingBottom: '140px' }}>
         {messages.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -164,12 +164,21 @@ export default function ChatTab({ profile }: ChatTabProps) {
 
           {/* Typing indicator */}
           {loading && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
               <GlowOrb size={28} color="blue" pulse emoji="🧠" />
-              <div style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '18px 18px 18px 4px', padding: '14px 18px', backdropFilter: 'blur(16px)' }}>
+              <div style={{
+                backgroundColor: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '18px 18px 18px 4px', padding: '14px 18px',
+                backdropFilter: 'blur(16px)'
+              }}>
                 <div style={{ display: 'flex', gap: '5px' }}>
                   {[0, 1, 2].map(i => (
-                    <div key={i} style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#9CA3AF', animation: `bounce-dot 1.2s ease-in-out ${i * 0.2}s infinite` }} />
+                    <div key={i} style={{
+                      width: 7, height: 7, borderRadius: '50%', backgroundColor: '#9CA3AF',
+                      animation: `bounce-dot 1.2s ease-in-out ${i * 0.2}s infinite`
+                    }} />
                   ))}
                 </div>
               </div>
@@ -179,12 +188,20 @@ export default function ChatTab({ profile }: ChatTabProps) {
         </div>
       </div>
 
-      {/* Glass Capsule Input */}
+      {/* Glass Capsule Input - FIXED POSITION */}
       <div style={{
-        padding: '12px 16px 16px',
+        position: 'fixed',
+        bottom: '72px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '100%',
+        maxWidth: '672px',
+        padding: '12px 16px',
         borderTop: '1px solid rgba(255,255,255,0.06)',
-        backgroundColor: 'rgba(10,10,10,0.85)',
-        backdropFilter: 'blur(24px)'
+        backgroundColor: 'rgba(10,10,10,0.9)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        zIndex: 30,
       }}>
         <div style={{
           display: 'flex', gap: '10px', alignItems: 'center',
@@ -198,7 +215,10 @@ export default function ChatTab({ profile }: ChatTabProps) {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
             placeholder="Message Health Brain..."
-            style={{ flex: 1, backgroundColor: 'transparent', border: 'none', color: '#F5F5F5', fontSize: '14px', outline: 'none' }}
+            style={{
+              flex: 1, backgroundColor: 'transparent', border: 'none',
+              color: '#F5F5F5', fontSize: '14px', outline: 'none'
+            }}
           />
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -206,9 +226,11 @@ export default function ChatTab({ profile }: ChatTabProps) {
             onClick={() => sendMessage()}
             disabled={loading}
             style={{
-              width: 42, height: 42, borderRadius: '50%', flexShrink: 0, border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
+              width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
+              border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
               background: loading ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #22C55E, #16A34A)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '17px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '17px',
               boxShadow: loading ? 'none' : '0 4px 20px rgba(34,197,94,0.4)',
               transition: 'all 0.2s'
             }}
