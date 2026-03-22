@@ -22,6 +22,8 @@ export default function SupplementsTab() {
   const [newSupp, setNewSupp] = useState({ name: '', dose: '', timing: '' });
   const [addingSupp, setAddingSupp] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [celebratedIds, setCelebratedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     Promise.all([fetchSupplements(), fetchSupplementLogs()]).finally(() => setLoading(false));
@@ -55,19 +57,31 @@ export default function SupplementsTab() {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ supplement_id, taken }),
     });
+    if (taken) {
+      setCelebratedIds(prev => new Set([...prev, supplement_id]));
+      setTimeout(() => setCelebratedIds(prev => { const n = new Set(prev); n.delete(supplement_id); return n; }), 1500);
+    }
     fetchSupplementLogs();
+  };
+
+  const deleteSupplement = async (id: string) => {
+    setDeletingId(id);
+    await fetch(`/api/supplements/${id}`, { method: 'DELETE' });
+    setSupplements(prev => prev.filter(s => s.id !== id));
+    setDeletingId(null);
   };
 
   const isSupplementTaken = (id: string) => supplementLogs.find(l => l.supplement_id === id)?.taken || false;
   const takenCount = supplements.filter(s => isSupplementTaken(s.id)).length;
   const percentage = supplements.length > 0 ? Math.round((takenCount / supplements.length) * 100) : 0;
+  const allDone = supplements.length > 0 && takenCount === supplements.length;
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
       <div style={{ padding: '16px' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
           <div>
             <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '2px' }}>Supplements</h2>
             <p style={{ color: '#9CA3AF', fontSize: '12px' }}>{takenCount}/{supplements.length} taken today</p>
@@ -79,10 +93,22 @@ export default function SupplementsTab() {
           </motion.button>
         </div>
 
+        {/* All done celebration */}
+        <AnimatePresence>
+          {allDone && (
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+              style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '16px', padding: '14px', marginBottom: '14px', textAlign: 'center' }}>
+              <p style={{ fontSize: '24px', marginBottom: '4px' }}>🎉</p>
+              <p style={{ fontSize: '14px', fontWeight: 700, color: '#22C55E', marginBottom: '2px' }}>All done for today!</p>
+              <p style={{ fontSize: '12px', color: '#9CA3AF' }}>Great job staying consistent</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Progress Ring */}
         {supplements.length > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
-            <ProgressRing percentage={percentage} size={120} strokeWidth={9} label={`${percentage}%`} sublabel="completed" />
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '18px' }}>
+            <ProgressRing percentage={percentage} size={110} strokeWidth={8} label={`${percentage}%`} sublabel="completed" />
           </div>
         )}
 
@@ -103,7 +129,7 @@ export default function SupplementsTab() {
                     style={{ width: '100%', backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '11px 14px', color: '#F5F5F5', fontSize: '16px', outline: 'none' }} />
                 ))}
                 <motion.button whileTap={{ scale: 0.98 }} onClick={addSupplement}
-                  style={{ padding: '13px', background: 'linear-gradient(135deg, #22C55E, #16A34A)', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 16px rgba(34,197,94,0.3)' }}>
+                  style={{ padding: '13px', background: 'linear-gradient(135deg, #22C55E, #16A34A)', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
                   Save Supplement
                 </motion.button>
               </div>
@@ -111,40 +137,62 @@ export default function SupplementsTab() {
           )}
         </AnimatePresence>
 
+        {/* Empty state */}
+        {supplements.length === 0 && !loading && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: '16px', padding: '40px 20px', textAlign: 'center' }}>
+            <p style={{ fontSize: '40px', marginBottom: '12px' }}>💊</p>
+            <p style={{ fontSize: '14px', fontWeight: 600, color: '#F5F5F5', marginBottom: '4px' }}>No supplements yet</p>
+            <p style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '16px' }}>Add your daily supplements to track them</p>
+            <button onClick={() => setAddingSupp(true)}
+              style={{ padding: '10px 24px', background: 'linear-gradient(135deg, #22C55E, #16A34A)', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+              + Add First Supplement
+            </button>
+          </motion.div>
+        )}
+
         {/* Supplement Cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {supplements.length === 0 && !loading && (
-            <div style={{ textAlign: 'center', padding: '48px 20px', color: '#9CA3AF' }}>
-              <p style={{ fontSize: '36px', marginBottom: '10px' }}>💊</p>
-              <p style={{ fontSize: '15px', fontWeight: 500, color: '#F5F5F5', marginBottom: '4px' }}>No supplements yet</p>
-              <p style={{ fontSize: '13px' }}>Tap + Add to get started</p>
-            </div>
-          )}
-
           <AnimatePresence>
             {supplements.map((supp, i) => {
               const taken = isSupplementTaken(supp.id);
+              const celebrated = celebratedIds.has(supp.id);
               return (
                 <motion.div key={supp.id}
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+                  exit={{ opacity: 0, x: -100 }}
                   style={{
                     backgroundColor: taken ? 'rgba(34,197,94,0.06)' : 'rgba(255,255,255,0.03)',
                     border: taken ? '1px solid rgba(34,197,94,0.25)' : '1px solid rgba(255,255,255,0.07)',
-                    borderRadius: '16px', padding: '14px',
+                    borderRadius: '14px', padding: '12px 14px',
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     transition: 'all 0.3s ease',
-                    boxShadow: taken ? '0 0 20px rgba(34,197,94,0.08)' : 'none',
-                    gap: '12px',
+                    boxShadow: celebrated ? '0 0 20px rgba(34,197,94,0.2)' : taken ? '0 0 12px rgba(34,197,94,0.06)' : 'none',
+                    gap: '10px',
+                    position: 'relative', overflow: 'hidden',
                   }}>
+                  {/* Celebrate flash */}
+                  {celebrated && (
+                    <motion.div initial={{ opacity: 0.4 }} animate={{ opacity: 0 }} transition={{ duration: 1.5 }}
+                      style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(34,197,94,0.15)', pointerEvents: 'none' }} />
+                  )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: '14px', fontWeight: 600, color: taken ? '#22C55E' : '#F5F5F5', marginBottom: '2px', transition: 'color 0.3s', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{supp.name}</p>
-                    <p style={{ fontSize: '12px', color: '#9CA3AF' }}>{supp.dose} · {supp.timing}</p>
+                    <p style={{ fontSize: '11px', color: '#9CA3AF' }}>{supp.dose} · {supp.timing}</p>
                   </div>
-                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.9 }}
-                    onClick={() => toggleSupplement(supp.id, !taken)}
-                    style={{ padding: '8px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 0.3s', flexShrink: 0, ...(taken ? { background: 'linear-gradient(135deg, #22C55E, #16A34A)', color: '#fff', boxShadow: '0 4px 12px rgba(34,197,94,0.35)' } : { backgroundColor: 'rgba(255,255,255,0.06)', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.08)' }) }}>
-                    {taken ? '✅' : 'Mark'}
-                  </motion.button>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.9 }}
+                      onClick={() => toggleSupplement(supp.id, !taken)}
+                      style={{ padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 0.3s', ...(taken ? { background: 'linear-gradient(135deg, #22C55E, #16A34A)', color: '#fff', boxShadow: '0 4px 12px rgba(34,197,94,0.35)' } : { backgroundColor: 'rgba(255,255,255,0.06)', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.08)' }) }}>
+                      {taken ? '✅' : 'Mark'}
+                    </motion.button>
+                    <motion.button whileTap={{ scale: 0.9 }}
+                      onClick={() => deleteSupplement(supp.id)}
+                      disabled={deletingId === supp.id}
+                      style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: '8px', padding: '7px 8px', color: '#EF4444', fontSize: '12px', cursor: 'pointer', opacity: deletingId === supp.id ? 0.5 : 1 }}>
+                      🗑️
+                    </motion.button>
+                  </div>
                 </motion.div>
               );
             })}
