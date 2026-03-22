@@ -37,6 +37,7 @@ export default function ChatTab({ profile }: ChatTabProps) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -74,7 +75,8 @@ export default function ChatTab({ profile }: ChatTabProps) {
         padding: '8px 16px',
         borderBottom: '1px solid rgba(255,255,255,0.04)',
         backgroundColor: 'rgba(255,255,255,0.02)',
-        display: 'flex', gap: '8px', overflowX: 'auto'
+        display: 'flex', gap: '8px', overflowX: 'auto',
+        flexShrink: 0,
       }}>
         {['AI Ready', 'Logs connected', 'Memory active'].map((item, i) => (
           <span key={i} style={{
@@ -89,14 +91,20 @@ export default function ChatTab({ profile }: ChatTabProps) {
         ))}
       </div>
 
-      {/* Messages */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', paddingBottom: '140px' }}>
+      {/* Messages - scrollable area */}
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        padding: '20px 16px',
+        paddingBottom: '100px',
+        WebkitOverflowScrolling: 'touch',
+      }}>
         {messages.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', paddingTop: '60px' }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}
           >
             <GlowOrb size={80} color="green" pulse emoji="🧠" />
             <p style={{ fontSize: '22px', fontWeight: 700, marginTop: '24px', marginBottom: '8px', letterSpacing: '-0.02em' }} className="gradient-text">
@@ -152,7 +160,6 @@ export default function ChatTab({ profile }: ChatTabProps) {
                           border: '1px solid rgba(34,197,94,0.3)',
                           color: '#22C55E', cursor: 'pointer',
                           backdropFilter: 'blur(12px)',
-                          transition: 'background 0.2s'
                         }}
                       >{option}</motion.button>
                     ))}
@@ -162,7 +169,6 @@ export default function ChatTab({ profile }: ChatTabProps) {
             ))}
           </AnimatePresence>
 
-          {/* Typing indicator */}
           {loading && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
@@ -171,7 +177,6 @@ export default function ChatTab({ profile }: ChatTabProps) {
                 backgroundColor: 'rgba(255,255,255,0.04)',
                 border: '1px solid rgba(255,255,255,0.08)',
                 borderRadius: '18px 18px 18px 4px', padding: '14px 18px',
-                backdropFilter: 'blur(16px)'
               }}>
                 <div style={{ display: 'flex', gap: '5px' }}>
                   {[0, 1, 2].map(i => (
@@ -188,36 +193,31 @@ export default function ChatTab({ profile }: ChatTabProps) {
         </div>
       </div>
 
-      {/* Glass Capsule Input - FIXED POSITION */}
+      {/* Input - fixed at bottom of chat container */}
       <div style={{
-        position: 'fixed',
-        bottom: '72px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: '100%',
-        maxWidth: '672px',
-        padding: '12px 16px',
+        flexShrink: 0,
+        padding: '12px 16px 16px',
         borderTop: '1px solid rgba(255,255,255,0.06)',
-        backgroundColor: 'rgba(10,10,10,0.9)',
+        backgroundColor: 'rgba(10,10,10,0.95)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
-        zIndex: 30,
       }}>
         <div style={{
           display: 'flex', gap: '10px', alignItems: 'center',
           backgroundColor: 'rgba(255,255,255,0.04)',
           border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: '28px', padding: '8px 8px 8px 20px',
-          backdropFilter: 'blur(16px)'
         }}>
           <input
+            ref={inputRef}
             type="text" value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
             placeholder="Message Health Brain..."
             style={{
               flex: 1, backgroundColor: 'transparent', border: 'none',
-              color: '#F5F5F5', fontSize: '14px', outline: 'none'
+              color: '#F5F5F5', fontSize: '16px', outline: 'none',
+              WebkitAppearance: 'none',
             }}
           />
           <motion.button
@@ -226,13 +226,12 @@ export default function ChatTab({ profile }: ChatTabProps) {
             onClick={() => sendMessage()}
             disabled={loading}
             style={{
-              width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
+              width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
               border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
               background: loading ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #22C55E, #16A34A)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '17px',
               boxShadow: loading ? 'none' : '0 4px 20px rgba(34,197,94,0.4)',
-              transition: 'all 0.2s'
             }}
           >➤</motion.button>
         </div>
