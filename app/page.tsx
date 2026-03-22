@@ -247,9 +247,9 @@ export default function Home() {
                 {msg.role === 'assistant' && <div className="w-7 h-7 rounded-full bg-green-600 flex items-center justify-center text-xs mr-2 mt-1 flex-shrink-0">🧠</div>}
                 <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-green-600 text-white rounded-br-sm' : 'bg-gray-800 text-gray-100 rounded-bl-sm'}`}>
                   {msg.role === 'assistant' ? (
-                    <ReactMarkdown className="prose prose-invert prose-sm max-w-none">
+                    <ReactMarkdown"prose prose-invert prose-sm max-w-none">
                       {msg.content}
-                    </ReactMarkdown>
+                    </div>
                   ) : msg.content}
                 </div>
               </div>
@@ -418,9 +418,9 @@ export default function Home() {
           {analysis && (
             <div className="bg-gray-900 rounded-2xl p-4">
               <p className="text-green-400 font-medium mb-3">📋 Analiza nalaza:</p>
-              <ReactMarkdown className="prose prose-invert prose-sm max-w-none text-gray-100">
+              <ReactMarkdown"prose prose-invert prose-sm max-w-none text-gray-100">
                 {analysis}
-              </ReactMarkdown>
+              </div>
             </div>
           )}
         </div>
