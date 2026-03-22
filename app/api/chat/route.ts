@@ -95,7 +95,7 @@ KORISNIČKI PROFIL:
       ? `\nHISTORIJSKI PODACI (zadnjih ${historicalLogs.length} logova):\n` + historicalLogs.map(l => `- [${l.date}] [${l.type}] ${JSON.stringify(l.data)}`).join('\n')
       : '';
 
-    const systemPrompt = `Ti si Health Brain — adaptivni personalni zdravstveni AI koji kombinuje medicinsko razmišljanje, nutricionizam, farmakologiju i life coaching.
+    const systemPrompt =`Ti si Health Brain — adaptivni personalni zdravstveni AI koji kombinuje medicinsko razmišljanje, nutricionizam, farmakologiju i life coaching.
 
 Ti NISI chatbot. Ti si kumulativni zdravstveni model koji korisnika poznaje dublje sa svakim razgovorom — kao doktor koji te prati godinama.
 
