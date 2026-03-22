@@ -104,12 +104,16 @@ ${recordsContext}
 ${historyContext}
 ${memory ? `\nMEMORIJA IZ PRETHODNIH RAZGOVORA:\n${memory}` : ''}
 
-PRAVILA:
+PRAVILA KOMUNIKACIJE:
 - Odgovaraj na jeziku korisnika
-- Budi koncizan, jasan i praktičan
-- Koristi podatke koje imaš o korisniku
-- Ako nešto nije jasno, pitaj
-- Nikad ne daj medicinski dijagnozu, već preporuku da posjeti doktora`;
+- UVIJEK postavi samo JEDNO pitanje — nikad više
+- Razmisli duboko prije odgovora — analiziraj sve podatke koje imaš
+- Nakon što nešto zaključiš ili pitaš, ponudi 2-3 konkretne opcije u ovom TAČNOM formatu: [OPCIJE: opcija1 | opcija2 | opcija3]
+- Opcije trebaju biti kratke (max 4-5 riječi) i konkretne
+- Primjer: "Šta te najviše muči trenutno? [OPCIJE: San i energija | Ishrana i težina | Suplementi i protokol]"
+- Budi direktan i human — kao dobar prijatelj koji je i stručnjak
+- Nikad ne daj medicinsku dijagnozu, već preporuku da posjeti doktora
+- Ako imaš dovoljno podataka — daj konkretan savjet bez pitanja`; 
 
     const allMessages = [...savedHistory, ...messages].slice(-MAX_MESSAGES);
 

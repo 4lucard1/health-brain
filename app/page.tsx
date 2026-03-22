@@ -6,6 +6,7 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tool
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  options?: string[];
 }
 
 type LogType = 'meal' | 'supplement' | 'sleep' | 'energy' | 'symptom';
@@ -52,6 +53,17 @@ interface UserProfile {
   conditions: string[];
   medications: string[];
 }
+
+// Parse AI message for options
+const parseMessage = (content: string): { text: string; options: string[] } => {
+  const optionsMatch = content.match(/\[OPCIJE:\s*([^\]]+)\]/);
+  if (optionsMatch) {
+    const options = optionsMatch[1].split('|').map(o => o.trim()).filter(Boolean);
+    const text = content.replace(/\[OPCIJE:[^\]]+\]/, '').trim();
+    return { text, options };
+  }
+  return { text: content, options: [] };
+};
 
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -199,21 +211,25 @@ export default function Home() {
     return log?.taken || false;
   };
 
-  const sendMessage = async () => {
-    if (!input.trim() || loading) return;
-    const userMessage: Message = { role: 'user', content: input };
+  const sendMessage = async (text?: string) => {
+    const messageText = text || input;
+    if (!messageText.trim() || loading) return;
+
+    const userMessage: Message = { role: 'user', content: messageText };
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setInput('');
     setLoading(true);
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({ messages: newMessages.map(m => ({ role: m.role, content: m.content })) }),
       });
       const data = await response.json();
-      setMessages([...newMessages, { role: 'assistant', content: data.message }]);
+      const { text: parsedText, options } = parseMessage(data.message);
+      setMessages([...newMessages, { role: 'assistant', content: parsedText, options }]);
     } catch (error) {
       console.error(error);
     } finally {
@@ -343,11 +359,7 @@ export default function Home() {
                 <div key={i} style={{ width: i === onboardingStep ? 24 : 8, height: 8, borderRadius: '4px', backgroundColor: i === onboardingStep ? '#22C55E' : '#1A1A1A', transition: 'all 0.3s' }} />
               ))}
             </div>
-            <button onClick={() => setOnboardingStep(s => s + 1)} style={{
-              padding: '16px 48px', background: 'linear-gradient(135deg, #22C55E, #16A34A)',
-              border: 'none', borderRadius: '20px', color: '#fff', fontSize: '16px',
-              fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px rgba(34,197,94,0.3)'
-            }}>Continue →</button>
+            <button onClick={() => setOnboardingStep(s => s + 1)} style={{ padding: '16px 48px', background: 'linear-gradient(135deg, #22C55E, #16A34A)', border: 'none', borderRadius: '20px', color: '#fff', fontSize: '16px', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px rgba(34,197,94,0.3)' }}>Continue →</button>
           </div>
         ) : (
           <div style={{ width: '100%', maxWidth: '400px', animation: 'fadeSlideUp 0.4s ease' }}>
@@ -360,47 +372,29 @@ export default function Home() {
                 { key: 'gender', placeholder: 'Male / Female / Other', label: 'Gender' },
                 { key: 'height_cm', placeholder: 'Height (cm)', label: 'Height' },
                 { key: 'weight_kg', placeholder: 'Weight (kg)', label: 'Weight' },
-                { key: 'goals', placeholder: 'e.g. Lose weight, Build muscle, Better sleep', label: 'Goals (comma separated)' },
+                { key: 'goals', placeholder: 'e.g. Lose weight, Build muscle', label: 'Goals (comma separated)' },
                 { key: 'allergies', placeholder: 'e.g. Gluten, Lactose', label: 'Allergies' },
                 { key: 'conditions', placeholder: 'e.g. Diabetes, Hypertension', label: 'Health conditions' },
                 { key: 'medications', placeholder: 'e.g. Metformin 500mg', label: 'Medications' },
               ].map(({ key, placeholder, label }) => (
                 <div key={key}>
                   <p style={{ color: '#9CA3AF', fontSize: '11px', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
-                  <input
-                    placeholder={placeholder}
-                    value={profileForm[key as keyof typeof profileForm]}
+                  <input placeholder={placeholder} value={profileForm[key as keyof typeof profileForm]}
                     onChange={(e) => setProfileForm({ ...profileForm, [key]: e.target.value })}
-                    style={{
-                      width: '100%', backgroundColor: '#111111', border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: '14px', padding: '12px 16px', color: '#F5F5F5', fontSize: '14px', outline: 'none'
-                    }}
-                  />
+                    style={{ width: '100%', backgroundColor: '#111111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '12px 16px', color: '#F5F5F5', fontSize: '14px', outline: 'none' }} />
                 </div>
               ))}
             </div>
-            <button onClick={saveProfile} style={{
-              marginTop: '20px', width: '100%', padding: '16px',
-              background: 'linear-gradient(135deg, #22C55E, #16A34A)',
-              border: 'none', borderRadius: '16px', color: '#fff',
-              fontSize: '16px', fontWeight: 600, cursor: 'pointer',
-              boxShadow: '0 4px 20px rgba(34,197,94,0.3)'
-            }}>Let's Go! 🚀</button>
-            <button onClick={() => { setShowOnboarding(false); }} style={{
-              marginTop: '12px', width: '100%', padding: '12px',
-              backgroundColor: 'transparent', border: 'none', color: '#6B7280',
-              fontSize: '14px', cursor: 'pointer'
-            }}>Skip for now</button>
+            <button onClick={saveProfile} style={{ marginTop: '20px', width: '100%', padding: '16px', background: 'linear-gradient(135deg, #22C55E, #16A34A)', border: 'none', borderRadius: '16px', color: '#fff', fontSize: '16px', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px rgba(34,197,94,0.3)' }}>Let's Go! 🚀</button>
+            <button onClick={() => setShowOnboarding(false)} style={{ marginTop: '12px', width: '100%', padding: '12px', backgroundColor: 'transparent', border: 'none', color: '#6B7280', fontSize: '14px', cursor: 'pointer' }}>Skip for now</button>
           </div>
         )}
-        <style>{`
-          @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        `}</style>
+        <style>{`@keyframes fadeSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }`}</style>
       </div>
     );
   }
 
-  // PROFILE MODAL
+  // PROFILE PAGE
   if (showProfile) {
     return (
       <div style={{ backgroundColor: '#0A0A0A', minHeight: '100vh', color: '#F5F5F5', padding: '24px' }} className="max-w-2xl mx-auto">
@@ -422,24 +416,12 @@ export default function Home() {
           ].map(({ key, placeholder, label }) => (
             <div key={key}>
               <p style={{ color: '#9CA3AF', fontSize: '11px', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
-              <input
-                placeholder={placeholder}
-                value={profileForm[key as keyof typeof profileForm]}
+              <input placeholder={placeholder} value={profileForm[key as keyof typeof profileForm]}
                 onChange={(e) => setProfileForm({ ...profileForm, [key]: e.target.value })}
-                style={{
-                  width: '100%', backgroundColor: '#111111', border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: '14px', padding: '12px 16px', color: '#F5F5F5', fontSize: '14px', outline: 'none'
-                }}
-              />
+                style={{ width: '100%', backgroundColor: '#111111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '12px 16px', color: '#F5F5F5', fontSize: '14px', outline: 'none' }} />
             </div>
           ))}
-          <button onClick={saveProfile} style={{
-            width: '100%', padding: '16px',
-            background: 'linear-gradient(135deg, #22C55E, #16A34A)',
-            border: 'none', borderRadius: '16px', color: '#fff',
-            fontSize: '16px', fontWeight: 600, cursor: 'pointer',
-            boxShadow: '0 4px 20px rgba(34,197,94,0.3)'
-          }}>Save Profile</button>
+          <button onClick={saveProfile} style={{ width: '100%', padding: '16px', background: 'linear-gradient(135deg, #22C55E, #16A34A)', border: 'none', borderRadius: '16px', color: '#fff', fontSize: '16px', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px rgba(34,197,94,0.3)' }}>Save Profile</button>
         </div>
       </div>
     );
@@ -481,21 +463,14 @@ export default function Home() {
         className="sticky top-0 z-40 px-5 py-4 flex items-center justify-between backdrop-blur-xl">
         <div>
           <p style={{ color: '#9CA3AF', fontSize: '11px', letterSpacing: '0.05em' }} className="uppercase">{today}</p>
-          <h1 style={{ color: '#22C55E', fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em' }}>
-            🧠 Health Brain
-          </h1>
+          <h1 style={{ color: '#22C55E', fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em' }}>🧠 Health Brain</h1>
         </div>
         <div className="flex items-center gap-3">
           <div style={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.08)' }} className="px-3 py-1.5 rounded-full flex items-center gap-1.5">
             <span style={{ fontSize: '13px' }}>🔥</span>
             <span style={{ color: '#F5F5F5', fontSize: '13px', fontWeight: 600 }}>{streak}</span>
           </div>
-          <button onClick={() => setShowProfile(true)} style={{
-            width: 36, height: 36, backgroundColor: '#1A1A1A',
-            border: '2px solid #22C55E', borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', fontSize: '16px'
-          }}>
+          <button onClick={() => setShowProfile(true)} style={{ width: 36, height: 36, backgroundColor: '#1A1A1A', border: '2px solid #22C55E', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '15px', fontWeight: 700, color: '#22C55E' }}>
             {profile?.name ? profile.name[0].toUpperCase() : '👤'}
           </button>
         </div>
@@ -510,56 +485,59 @@ export default function Home() {
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
               {messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center py-20">
-                  <div style={{
-                    width: 72, height: 72, borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(34,197,94,0.3), rgba(59,130,246,0.1))',
-                    border: '2px solid rgba(34,197,94,0.4)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '28px', marginBottom: '20px',
-                    boxShadow: '0 0 30px rgba(34,197,94,0.2)'
-                  }}>🧠</div>
+                  <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'radial-gradient(circle, rgba(34,197,94,0.3), rgba(59,130,246,0.1))', border: '2px solid rgba(34,197,94,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', marginBottom: '20px', boxShadow: '0 0 30px rgba(34,197,94,0.2)' }}>🧠</div>
                   <p style={{ color: '#F5F5F5', fontSize: '20px', fontWeight: 600, marginBottom: '8px' }}>
                     {profile?.name ? `Hey ${profile.name}! 👋` : 'How are you feeling?'}
                   </p>
                   <p style={{ color: '#9CA3AF', fontSize: '14px' }}>Ask me anything about your health.</p>
                 </div>
               )}
+
               {messages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} items-end gap-2`}>
-                  {msg.role === 'assistant' && (
+                <div key={i}>
+                  <div className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} items-end gap-2`}>
+                    {msg.role === 'assistant' && (
+                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.6), rgba(34,197,94,0.3))', border: '1px solid rgba(59,130,246,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', flexShrink: 0, boxShadow: '0 0 12px rgba(59,130,246,0.3)' }}>🧠</div>
+                    )}
                     <div style={{
-                      width: 28, height: 28, borderRadius: '50%',
-                      background: 'radial-gradient(circle, rgba(59,130,246,0.6), rgba(34,197,94,0.3))',
-                      border: '1px solid rgba(59,130,246,0.5)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '12px', flexShrink: 0,
-                      boxShadow: '0 0 12px rgba(59,130,246,0.3)'
-                    }}>🧠</div>
+                      maxWidth: '78%', padding: '12px 16px', borderRadius: '18px',
+                      fontSize: '14px', lineHeight: '1.6',
+                      ...(msg.role === 'user' ? {
+                        background: 'linear-gradient(135deg, #22C55E, #16A34A)',
+                        color: '#fff', borderBottomRightRadius: '4px',
+                        boxShadow: '0 4px 20px rgba(34,197,94,0.25)'
+                      } : {
+                        backgroundColor: '#1A1A1A',
+                        border: '1px solid rgba(255,255,255,0.06)',
+                        color: '#F5F5F5', borderBottomLeftRadius: '4px',
+                      })
+                    }}>{msg.content}</div>
+                  </div>
+
+                  {/* OPTIONS BUTTONS */}
+                  {msg.role === 'assistant' && msg.options && msg.options.length > 0 && i === messages.length - 1 && !loading && (
+                    <div style={{ marginTop: '10px', marginLeft: '36px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {msg.options.map((option, oi) => (
+                        <button key={oi} onClick={() => sendMessage(option)} style={{
+                          padding: '8px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: 500,
+                          backgroundColor: 'transparent',
+                          border: '1px solid rgba(34,197,94,0.4)',
+                          color: '#22C55E', cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          backdropFilter: 'blur(10px)',
+                        }}
+                          onMouseEnter={e => { (e.target as HTMLButtonElement).style.backgroundColor = 'rgba(34,197,94,0.1)'; }}
+                          onMouseLeave={e => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
+                        >{option}</button>
+                      ))}
+                    </div>
                   )}
-                  <div style={{
-                    maxWidth: '78%', padding: '12px 16px', borderRadius: '18px',
-                    fontSize: '14px', lineHeight: '1.6',
-                    ...(msg.role === 'user' ? {
-                      background: 'linear-gradient(135deg, #22C55E, #16A34A)',
-                      color: '#fff', borderBottomRightRadius: '4px',
-                      boxShadow: '0 4px 20px rgba(34,197,94,0.25)'
-                    } : {
-                      backgroundColor: '#1A1A1A',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                      color: '#F5F5F5', borderBottomLeftRadius: '4px',
-                    })
-                  }}>{msg.content}</div>
                 </div>
               ))}
+
               {loading && (
                 <div className="flex items-end gap-2">
-                  <div style={{
-                    width: 28, height: 28, borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(59,130,246,0.6), rgba(34,197,94,0.3))',
-                    border: '1px solid rgba(59,130,246,0.5)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px',
-                    boxShadow: '0 0 12px rgba(59,130,246,0.3)'
-                  }}>🧠</div>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.6), rgba(34,197,94,0.3))', border: '1px solid rgba(59,130,246,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', boxShadow: '0 0 12px rgba(59,130,246,0.3)' }}>🧠</div>
                   <div style={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '18px', borderBottomLeftRadius: '4px', padding: '14px 18px' }}>
                     <div className="flex gap-1.5">
                       {[0, 1, 2].map(i => (
@@ -571,20 +549,15 @@ export default function Home() {
               )}
               <div ref={messagesEndRef} />
             </div>
+
+            {/* CHAT INPUT */}
             <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(10,10,10,0.9)' }} className="backdrop-blur-xl">
               <div className="flex gap-3 items-center">
                 <input type="text" value={input} onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                   placeholder="Message Health Brain..."
                   style={{ flex: 1, backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '24px', padding: '12px 20px', color: '#F5F5F5', fontSize: '14px', outline: 'none' }} />
-                <button onClick={sendMessage} disabled={loading} style={{
-                  width: 46, height: 46, borderRadius: '50%', flexShrink: 0,
-                  background: loading ? '#1A1A1A' : 'linear-gradient(135deg, #22C55E, #16A34A)',
-                  border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '18px', boxShadow: loading ? 'none' : '0 4px 20px rgba(34,197,94,0.35)',
-                  transition: 'all 0.2s ease'
-                }}>➤</button>
+                <button onClick={() => sendMessage()} disabled={loading} style={{ width: 46, height: 46, borderRadius: '50%', flexShrink: 0, background: loading ? '#1A1A1A' : 'linear-gradient(135deg, #22C55E, #16A34A)', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', boxShadow: loading ? 'none' : '0 4px 20px rgba(34,197,94,0.35)', transition: 'all 0.2s ease' }}>➤</button>
               </div>
             </div>
           </div>
@@ -599,17 +572,12 @@ export default function Home() {
                 <p style={{ color: '#9CA3AF', fontSize: '13px' }}>Track your health data</p>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => setShowScanSheet(true)} style={{
-                  backgroundColor: '#1A1A1A', border: '1px solid rgba(59,130,246,0.3)',
-                  borderRadius: '14px', padding: '8px 14px', color: '#3B82F6',
-                  fontSize: '13px', fontWeight: 600, cursor: 'pointer'
-                }}>📸 Scan</button>
+                <button onClick={() => setShowScanSheet(true)} style={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '14px', padding: '8px 14px', color: '#3B82F6', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>📸 Scan</button>
                 <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
                   style={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '8px 12px', color: '#F5F5F5', fontSize: '12px', outline: 'none' }} />
               </div>
             </div>
 
-            {/* Scan Sheet */}
             {showScanSheet && (
               <div style={{ backgroundColor: '#111111', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '20px', padding: '16px', marginBottom: '16px' }}>
                 <div className="flex justify-between items-center mb-3">
@@ -617,39 +585,22 @@ export default function Home() {
                   <button onClick={() => { setShowScanSheet(false); setScanResult(''); setScanPreview(''); }} style={{ backgroundColor: 'transparent', border: 'none', color: '#9CA3AF', cursor: 'pointer', fontSize: '18px' }}>×</button>
                 </div>
                 <input ref={scanFileRef} type="file" accept="image/*" onChange={scanProduct} className="hidden" />
-                <button onClick={() => scanFileRef.current?.click()} style={{
-                  width: '100%', padding: '20px', border: '2px dashed rgba(59,130,246,0.3)',
-                  borderRadius: '14px', backgroundColor: 'rgba(59,130,246,0.05)',
-                  color: '#3B82F6', fontSize: '14px', cursor: 'pointer', marginBottom: '12px'
-                }}>📷 Take photo of product label</button>
-
+                <button onClick={() => scanFileRef.current?.click()} style={{ width: '100%', padding: '20px', border: '2px dashed rgba(59,130,246,0.3)', borderRadius: '14px', backgroundColor: 'rgba(59,130,246,0.05)', color: '#3B82F6', fontSize: '14px', cursor: 'pointer', marginBottom: '12px' }}>📷 Take photo of product label</button>
                 {scanning && <p style={{ color: '#9CA3AF', fontSize: '14px', textAlign: 'center', padding: '12px' }}>Scanning product...</p>}
-
                 {scanResult && (
                   <div>
-                    <p style={{ color: '#9CA3AF', fontSize: '12px', marginBottom: '8px' }}>Scan result:</p>
                     <div style={{ backgroundColor: '#1A1A1A', borderRadius: '12px', padding: '12px', marginBottom: '12px' }}>
                       <p style={{ fontSize: '13px', color: '#F5F5F5', whiteSpace: 'pre-wrap' }}>{scanResult}</p>
                     </div>
-                    <p style={{ color: '#9CA3AF', fontSize: '12px', marginBottom: '6px' }}>Product name:</p>
-                    <input placeholder="e.g. Protein Bar XYZ" value={scannedProductName}
+                    <input placeholder="Product name (e.g. Protein Bar XYZ)" value={scannedProductName}
                       onChange={(e) => setScannedProductName(e.target.value)}
                       style={{ width: '100%', backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '10px 14px', color: '#F5F5F5', fontSize: '14px', outline: 'none', marginBottom: '8px' }} />
-                    <p style={{ color: '#9CA3AF', fontSize: '12px', marginBottom: '6px' }}>Save as:</p>
                     <div className="flex gap-2 mb-3">
                       {[{ type: 'meal' as LogType, emoji: '🍽️', label: 'Meal' }, { type: 'supplement' as LogType, emoji: '💊', label: 'Supplement' }].map(({ type, emoji, label }) => (
-                        <button key={type} onClick={() => setLogType(type)} style={{
-                          padding: '8px 16px', borderRadius: '20px', fontSize: '13px', border: 'none', cursor: 'pointer',
-                          ...(logType === type ? { background: 'linear-gradient(135deg, #22C55E, #16A34A)', color: '#fff' } : { backgroundColor: '#1A1A1A', color: '#9CA3AF' })
-                        }}>{emoji} {label}</button>
+                        <button key={type} onClick={() => setLogType(type)} style={{ padding: '8px 16px', borderRadius: '20px', fontSize: '13px', border: 'none', cursor: 'pointer', ...(logType === type ? { background: 'linear-gradient(135deg, #22C55E, #16A34A)', color: '#fff' } : { backgroundColor: '#1A1A1A', color: '#9CA3AF' }) }}>{emoji} {label}</button>
                       ))}
                     </div>
-                    <button onClick={saveScanAsLog} style={{
-                      width: '100%', padding: '12px',
-                      background: 'linear-gradient(135deg, #22C55E, #16A34A)',
-                      border: 'none', borderRadius: '12px', color: '#fff',
-                      fontSize: '14px', fontWeight: 600, cursor: 'pointer'
-                    }}>Save to Log ✓</button>
+                    <button onClick={saveScanAsLog} style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, #22C55E, #16A34A)', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Save to Log ✓</button>
                   </div>
                 )}
               </div>
@@ -657,31 +608,16 @@ export default function Home() {
 
             <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
               {logTypes.map(({ type, label, emoji }) => (
-                <button key={type} onClick={() => setLogType(type)} style={{
-                  padding: '8px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: 500,
-                  whiteSpace: 'nowrap', border: 'none', cursor: 'pointer', transition: 'all 0.2s',
-                  ...(logType === type ? { background: 'linear-gradient(135deg, #22C55E, #16A34A)', color: '#fff', boxShadow: '0 4px 15px rgba(34,197,94,0.3)' } : { backgroundColor: '#1A1A1A', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.06)' })
-                }}>{emoji} {label}</button>
+                <button key={type} onClick={() => setLogType(type)} style={{ padding: '8px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: 500, whiteSpace: 'nowrap', border: 'none', cursor: 'pointer', transition: 'all 0.2s', ...(logType === type ? { background: 'linear-gradient(135deg, #22C55E, #16A34A)', color: '#fff', boxShadow: '0 4px 15px rgba(34,197,94,0.3)' } : { backgroundColor: '#1A1A1A', color: '#9CA3AF', border: '1px solid rgba(255,255,255,0.06)' }) }}>{emoji} {label}</button>
               ))}
             </div>
 
             <div style={{ backgroundColor: '#111111', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '16px', marginBottom: '20px' }}>
               <textarea value={logInput} onChange={(e) => setLogInput(e.target.value)}
-                placeholder={
-                  logType === 'meal' ? 'e.g. Chicken 200g, rice 100g...' :
-                  logType === 'supplement' ? 'e.g. Vitamin D 5000IU...' :
-                  logType === 'sleep' ? 'e.g. 7h sleep, felt rested...' :
-                  logType === 'energy' ? 'e.g. Energy 7/10...' : 'e.g. Headache in morning...'
-                }
+                placeholder={logType === 'meal' ? 'e.g. Chicken 200g, rice 100g...' : logType === 'supplement' ? 'e.g. Vitamin D 5000IU...' : logType === 'sleep' ? 'e.g. 7h sleep, felt rested...' : logType === 'energy' ? 'e.g. Energy 7/10...' : 'e.g. Headache in morning...'}
                 rows={3}
                 style={{ width: '100%', backgroundColor: 'transparent', border: 'none', color: '#F5F5F5', fontSize: '14px', resize: 'none', outline: 'none', lineHeight: '1.6' }} />
-              <button onClick={saveLog} style={{
-                marginTop: '12px', width: '100%', padding: '14px',
-                background: 'linear-gradient(135deg, #22C55E, #16A34A)',
-                border: 'none', borderRadius: '14px', color: '#fff',
-                fontSize: '14px', fontWeight: 600, cursor: 'pointer',
-                boxShadow: '0 4px 20px rgba(34,197,94,0.3)'
-              }}>{logSaved ? '✅ Saved!' : 'Save Log'}</button>
+              <button onClick={saveLog} style={{ marginTop: '12px', width: '100%', padding: '14px', background: 'linear-gradient(135deg, #22C55E, #16A34A)', border: 'none', borderRadius: '14px', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px rgba(34,197,94,0.3)' }}>{logSaved ? '✅ Saved!' : 'Save Log'}</button>
             </div>
 
             <div>
@@ -802,13 +738,8 @@ export default function Home() {
 
             {addingSupp && (
               <div style={{ backgroundColor: '#111111', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '16px', marginBottom: '16px' }} className="space-y-3">
-                {[
-                  { key: 'name', placeholder: 'Name (e.g. Vitamin D3)' },
-                  { key: 'dose', placeholder: 'Dose (e.g. 5000 IU)' },
-                  { key: 'timing', placeholder: 'When (e.g. Morning with food)' },
-                ].map(({ key, placeholder }) => (
-                  <input key={key} placeholder={placeholder}
-                    value={newSupp[key as keyof typeof newSupp]}
+                {[{ key: 'name', placeholder: 'Name (e.g. Vitamin D3)' }, { key: 'dose', placeholder: 'Dose (e.g. 5000 IU)' }, { key: 'timing', placeholder: 'When (e.g. Morning with food)' }].map(({ key, placeholder }) => (
+                  <input key={key} placeholder={placeholder} value={newSupp[key as keyof typeof newSupp]}
                     onChange={(e) => setNewSupp({ ...newSupp, [key]: e.target.value })}
                     style={{ width: '100%', backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px 16px', color: '#F5F5F5', fontSize: '14px', outline: 'none' }} />
                 ))}
@@ -880,17 +811,12 @@ export default function Home() {
               </div>
             )}
 
-            {/* Records History */}
             {records.length > 0 && (
               <div>
                 <p style={{ color: '#9CA3AF', fontSize: '13px', fontWeight: 500, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>History</p>
                 <div className="space-y-3">
                   {records.map((record) => (
-                    <button key={record.id} onClick={() => setSelectedRecord(record)} style={{
-                      width: '100%', backgroundColor: '#111111', border: '1px solid rgba(255,255,255,0.06)',
-                      borderRadius: '16px', padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
-                      transition: 'all 0.2s'
-                    }}>
+                    <button key={record.id} onClick={() => setSelectedRecord(record)} style={{ width: '100%', backgroundColor: '#111111', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '14px 16px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}>
                       <div className="flex justify-between items-start">
                         <div>
                           <p style={{ fontSize: '14px', fontWeight: 600, color: '#F5F5F5', marginBottom: '4px' }}>{record.title}</p>
@@ -899,9 +825,7 @@ export default function Home() {
                         <span style={{ color: '#22C55E', fontSize: '18px' }}>›</span>
                       </div>
                       {record.ai_analysis && (
-                        <p style={{ fontSize: '12px', color: '#6B7280', marginTop: '8px', lineHeight: '1.4' }}>
-                          {record.ai_analysis.substring(0, 80)}...
-                        </p>
+                        <p style={{ fontSize: '12px', color: '#6B7280', marginTop: '8px', lineHeight: '1.4' }}>{record.ai_analysis.substring(0, 80)}...</p>
                       )}
                     </button>
                   ))}
@@ -913,32 +837,15 @@ export default function Home() {
       </div>
 
       {/* BOTTOM NAVIGATION */}
-      <div style={{
-        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-        width: '100%', maxWidth: '672px',
-        backgroundColor: 'rgba(17,17,17,0.9)',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        backdropFilter: 'blur(20px)',
-        padding: '8px 16px 12px', zIndex: 50
-      }}>
+      <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '672px', backgroundColor: 'rgba(17,17,17,0.9)', borderTop: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(20px)', padding: '8px 16px 12px', zIndex: 50 }}>
         <div className="flex justify-around">
           {tabs.map(({ tab, emoji, label }) => {
             const isActive = activeTab === tab;
             const isLogTab = tab === 'log';
             return (
-              <button key={tab} onClick={() => setActiveTab(tab as any)} style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-                padding: isLogTab ? '0' : '8px 12px', border: 'none', cursor: 'pointer',
-                backgroundColor: 'transparent', transition: 'all 0.2s',
-              }}>
+              <button key={tab} onClick={() => setActiveTab(tab as any)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', padding: isLogTab ? '0' : '8px 12px', border: 'none', cursor: 'pointer', backgroundColor: 'transparent', transition: 'all 0.2s' }}>
                 {isLogTab ? (
-                  <div style={{
-                    width: 50, height: 50, borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #22C55E, #16A34A)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '22px', boxShadow: '0 4px 20px rgba(34,197,94,0.4)',
-                    marginTop: '-20px'
-                  }}>＋</div>
+                  <div style={{ width: 50, height: 50, borderRadius: '50%', background: 'linear-gradient(135deg, #22C55E, #16A34A)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', boxShadow: '0 4px 20px rgba(34,197,94,0.4)', marginTop: '-20px' }}>＋</div>
                 ) : (
                   <>
                     <span style={{ fontSize: '20px', opacity: isActive ? 1 : 0.5 }}>{emoji}</span>
