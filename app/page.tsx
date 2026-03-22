@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import ReactMarkdown from 'react-markdown';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -199,7 +198,6 @@ export default function Home() {
 
   return (
     <main className="flex flex-col h-screen bg-gray-950 text-white max-w-2xl mx-auto">
-      {/* Header */}
       <div className="p-4 border-b border-gray-800 flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold text-green-400">🧠 Health Brain</h1>
@@ -217,21 +215,16 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex border-b border-gray-800">
         {tabs.map(({ tab, label, title }) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab as any)}
-            className={`flex-1 py-2 text-xs font-medium transition-all ${activeTab === tab ? 'text-green-400 border-b-2 border-green-400 bg-green-400/5' : 'text-gray-500 hover:text-gray-300'}`}
-          >
+          <button key={tab} onClick={() => setActiveTab(tab as any)}
+            className={`flex-1 py-2 text-xs font-medium transition-all ${activeTab === tab ? 'text-green-400 border-b-2 border-green-400 bg-green-400/5' : 'text-gray-500 hover:text-gray-300'}`}>
             <div>{label}</div>
             <div>{title}</div>
           </button>
         ))}
       </div>
 
-      {/* CHAT */}
       {activeTab === 'chat' && (
         <>
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -244,13 +237,11 @@ export default function Home() {
             )}
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                {msg.role === 'assistant' && <div className="w-7 h-7 rounded-full bg-green-600 flex items-center justify-center text-xs mr-2 mt-1 flex-shrink-0">🧠</div>}
+                {msg.role === 'assistant' && (
+                  <div className="w-7 h-7 rounded-full bg-green-600 flex items-center justify-center text-xs mr-2 mt-1 flex-shrink-0">🧠</div>
+                )}
                 <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-green-600 text-white rounded-br-sm' : 'bg-gray-800 text-gray-100 rounded-bl-sm'}`}>
-                  {msg.role === 'assistant' ? (
-                    <div className="prose prose-invert prose-sm max-w-none">
-                      {msg.content}
-                    </div>
-                  ) : msg.content}
+                  {msg.content}
                 </div>
               </div>
             ))}
@@ -269,22 +260,18 @@ export default function Home() {
             <div ref={messagesEndRef} />
           </div>
           <div className="p-4 border-t border-gray-800 flex gap-2">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
+            <input type="text" value={input} onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
               placeholder="Napiši poruku..."
-              className="flex-1 bg-gray-800 text-white rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-green-500 text-sm"
-            />
-            <button onClick={sendMessage} disabled={loading} className="bg-green-600 hover:bg-green-500 disabled:opacity-50 px-5 py-3 rounded-xl font-medium transition-colors">
+              className="flex-1 bg-gray-800 text-white rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-green-500 text-sm" />
+            <button onClick={sendMessage} disabled={loading}
+              className="bg-green-600 hover:bg-green-500 disabled:opacity-50 px-5 py-3 rounded-xl font-medium transition-colors">
               ➤
             </button>
           </div>
         </>
       )}
 
-      {/* LOG */}
       {activeTab === 'log' && (
         <div className="flex-1 overflow-y-auto p-4">
           <div className="flex gap-2 mb-4 flex-wrap">
@@ -296,25 +283,20 @@ export default function Home() {
             ))}
           </div>
           <div className="bg-gray-900 rounded-2xl p-4 mb-4">
-            <textarea
-              value={logInput}
-              onChange={(e) => setLogInput(e.target.value)}
+            <textarea value={logInput} onChange={(e) => setLogInput(e.target.value)}
               placeholder={
-                logType === 'meal' ? 'npr. Piletina 200g, riža 100g, brokula...' :
-                logType === 'supplement' ? 'npr. Vitamin D 5000IU, Omega-3 2g...' :
-                logType === 'sleep' ? 'npr. Spavao 7h, probudio se 2x, odmoran...' :
-                logType === 'energy' ? 'npr. Energija 7/10, umoran poslije ručka...' :
-                'npr. Glavobolja ujutro, nestala nakon kafe...'
+                logType === 'meal' ? 'npr. Piletina 200g, riža 100g...' :
+                logType === 'supplement' ? 'npr. Vitamin D 5000IU...' :
+                logType === 'sleep' ? 'npr. Spavao 7h, odmoran...' :
+                logType === 'energy' ? 'npr. Energija 7/10...' :
+                'npr. Glavobolja ujutro...'
               }
               rows={3}
-              className="w-full bg-gray-800 text-white rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-green-500 resize-none text-sm"
-            />
+              className="w-full bg-gray-800 text-white rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-green-500 resize-none text-sm" />
             <button onClick={saveLog} className="mt-3 w-full bg-green-600 hover:bg-green-500 py-3 rounded-xl font-medium transition-colors text-sm">
               {logSaved ? '✅ Sačuvano!' : 'Sačuvaj'}
             </button>
           </div>
-
-          {/* Historija logova */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <p className="text-gray-400 text-sm font-medium">Historija</p>
@@ -340,7 +322,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* SUPLEMENTI */}
       {activeTab === 'supplements' && (
         <div className="flex-1 overflow-y-auto p-4">
           <div className="flex justify-between items-center mb-4">
@@ -355,7 +336,7 @@ export default function Home() {
           {supplements.length > 0 && (
             <div className="bg-gray-900 rounded-2xl p-3 mb-4">
               <div className="flex justify-between text-xs text-gray-400 mb-2">
-                <span>Progres</span>
+                <span>Progres danas</span>
                 <span>{Math.round((takenCount / supplements.length) * 100)}%</span>
               </div>
               <div className="w-full bg-gray-700 rounded-full h-2">
@@ -397,7 +378,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* NALAZ */}
       {activeTab === 'nalaz' && (
         <div className="flex-1 overflow-y-auto p-4">
           <div className="bg-gray-900 rounded-2xl p-4 mb-4">
@@ -418,15 +398,12 @@ export default function Home() {
           {analysis && (
             <div className="bg-gray-900 rounded-2xl p-4">
               <p className="text-green-400 font-medium mb-3">📋 Analiza nalaza:</p>
-              <ReactMarkdown"prose prose-invert prose-sm max-w-none text-gray-100">
-                {analysis}
-              </div>
+              <p className="text-gray-100 text-sm whitespace-pre-wrap">{analysis}</p>
             </div>
           )}
         </div>
       )}
 
-      {/* DASHBOARD */}
       {activeTab === 'dashboard' && (
         <div className="flex-1 overflow-y-auto p-4">
           <div className="flex items-center justify-between mb-4">
@@ -434,7 +411,6 @@ export default function Home() {
             <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
               className="bg-gray-800 text-white rounded-lg px-3 py-1 text-xs outline-none" />
           </div>
-
           <div className="grid grid-cols-2 gap-3 mb-4">
             {logTypes.map(({ type, emoji, label }) => {
               const count = logs.filter(l => l.type === type).length;
@@ -452,7 +428,6 @@ export default function Home() {
               <p className="text-xs text-gray-400">Suplementi</p>
             </div>
           </div>
-
           <div className="bg-gray-900 rounded-2xl p-4">
             <p className="text-gray-400 text-sm font-medium mb-3">Svi logovi za dan</p>
             <div className="space-y-2">
