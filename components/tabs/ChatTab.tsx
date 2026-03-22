@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import GlowOrb from '@/components/ui/GlowOrb';
 
 interface Message {
@@ -32,12 +34,53 @@ const parseMessage = (content: string): { text: string; options: string[] } => {
   return { text: content, options: [] };
 };
 
+const MarkdownComponents = {
+  p: ({ children }: any) => (
+    <p style={{ marginBottom: '10px', lineHeight: '1.7', color: '#F5F5F5', fontSize: '14px' }}>{children}</p>
+  ),
+  strong: ({ children }: any) => (
+    <strong style={{ color: '#22C55E', fontWeight: 700 }}>{children}</strong>
+  ),
+  em: ({ children }: any) => (
+    <em style={{ color: '#A3E635', fontStyle: 'italic' }}>{children}</em>
+  ),
+  ul: ({ children }: any) => (
+    <ul style={{ paddingLeft: '16px', marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>{children}</ul>
+  ),
+  ol: ({ children }: any) => (
+    <ol style={{ paddingLeft: '16px', marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>{children}</ol>
+  ),
+  li: ({ children }: any) => (
+    <li style={{ color: '#F5F5F5', fontSize: '14px', lineHeight: '1.6', listStyleType: 'none', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+      <span style={{ color: '#22C55E', flexShrink: 0, marginTop: '2px' }}>→</span>
+      <span>{children}</span>
+    </li>
+  ),
+  h1: ({ children }: any) => (
+    <h1 style={{ fontSize: '16px', fontWeight: 700, color: '#F5F5F5', marginBottom: '8px', marginTop: '12px', letterSpacing: '-0.01em' }}>{children}</h1>
+  ),
+  h2: ({ children }: any) => (
+    <h2 style={{ fontSize: '15px', fontWeight: 700, color: '#22C55E', marginBottom: '6px', marginTop: '10px' }}>{children}</h2>
+  ),
+  h3: ({ children }: any) => (
+    <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#A3E635', marginBottom: '6px', marginTop: '8px' }}>{children}</h3>
+  ),
+  blockquote: ({ children }: any) => (
+    <blockquote style={{ borderLeft: '3px solid #22C55E', paddingLeft: '12px', margin: '10px 0', color: '#9CA3AF', fontStyle: 'italic' }}>{children}</blockquote>
+  ),
+  code: ({ children }: any) => (
+    <code style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: '#22C55E', padding: '2px 6px', borderRadius: '6px', fontSize: '13px', fontFamily: 'monospace' }}>{children}</code>
+  ),
+  hr: () => (
+    <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.08)', margin: '12px 0' }} />
+  ),
+};
+
 export default function ChatTab({ profile }: ChatTabProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -91,13 +134,11 @@ export default function ChatTab({ profile }: ChatTabProps) {
         ))}
       </div>
 
-      {/* Messages - scrollable area */}
+      {/* Messages */}
       <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: '20px 16px',
-        paddingBottom: '100px',
-        WebkitOverflowScrolling: 'touch',
+        flex: 1, overflowY: 'auto', padding: '20px 16px',
+        paddingBottom: '20px',
+        WebkitOverflowScrolling: 'touch' as any,
       }}>
         {messages.length === 0 && (
           <motion.div
@@ -116,7 +157,7 @@ export default function ChatTab({ profile }: ChatTabProps) {
           </motion.div>
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <AnimatePresence>
             {messages.map((msg, i) => (
               <motion.div key={i}
@@ -125,20 +166,40 @@ export default function ChatTab({ profile }: ChatTabProps) {
                 transition={{ duration: 0.3 }}
               >
                 <div style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: '8px' }}>
-                  {msg.role === 'assistant' && <GlowOrb size={28} color="blue" pulse={false} emoji="🧠" />}
+                  {msg.role === 'assistant' && (
+                    <div style={{ flexShrink: 0, alignSelf: 'flex-start', marginTop: '4px' }}>
+                      <GlowOrb size={28} color="blue" pulse={false} emoji="🧠" />
+                    </div>
+                  )}
                   <div style={{
-                    maxWidth: '78%', padding: '12px 16px', fontSize: '14px', lineHeight: '1.65',
-                    borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                    maxWidth: msg.role === 'user' ? '78%' : '88%',
+                    padding: msg.role === 'user' ? '11px 16px' : '14px 18px',
+                    borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '4px 18px 18px 18px',
                     ...(msg.role === 'user' ? {
                       background: 'linear-gradient(135deg, #22C55E, #16A34A)',
-                      color: '#fff', boxShadow: '0 4px 20px rgba(34,197,94,0.25)'
+                      color: '#fff',
+                      fontSize: '14px',
+                      lineHeight: '1.6',
+                      boxShadow: '0 4px 20px rgba(34,197,94,0.25)'
                     } : {
                       backgroundColor: 'rgba(255,255,255,0.04)',
                       border: '1px solid rgba(255,255,255,0.08)',
-                      color: '#F5F5F5',
-                      backdropFilter: 'blur(16px)'
+                      backdropFilter: 'blur(16px)',
                     })
-                  }}>{msg.content}</div>
+                  }}>
+                    {msg.role === 'user' ? (
+                      <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.6', color: '#fff' }}>{msg.content}</p>
+                    ) : (
+                      <div style={{ fontSize: '14px' }}>
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={MarkdownComponents}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Options */}
@@ -160,6 +221,7 @@ export default function ChatTab({ profile }: ChatTabProps) {
                           border: '1px solid rgba(34,197,94,0.3)',
                           color: '#22C55E', cursor: 'pointer',
                           backdropFilter: 'blur(12px)',
+                          transition: 'background 0.2s'
                         }}
                       >{option}</motion.button>
                     ))}
@@ -169,6 +231,7 @@ export default function ChatTab({ profile }: ChatTabProps) {
             ))}
           </AnimatePresence>
 
+          {/* Typing indicator */}
           {loading && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
@@ -176,7 +239,7 @@ export default function ChatTab({ profile }: ChatTabProps) {
               <div style={{
                 backgroundColor: 'rgba(255,255,255,0.04)',
                 border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '18px 18px 18px 4px', padding: '14px 18px',
+                borderRadius: '4px 18px 18px 18px', padding: '14px 18px',
               }}>
                 <div style={{ display: 'flex', gap: '5px' }}>
                   {[0, 1, 2].map(i => (
@@ -193,7 +256,7 @@ export default function ChatTab({ profile }: ChatTabProps) {
         </div>
       </div>
 
-      {/* Input - fixed at bottom of chat container */}
+      {/* Input */}
       <div style={{
         flexShrink: 0,
         padding: '12px 16px 16px',
@@ -209,7 +272,6 @@ export default function ChatTab({ profile }: ChatTabProps) {
           borderRadius: '28px', padding: '8px 8px 8px 20px',
         }}>
           <input
-            ref={inputRef}
             type="text" value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
@@ -217,7 +279,7 @@ export default function ChatTab({ profile }: ChatTabProps) {
             style={{
               flex: 1, backgroundColor: 'transparent', border: 'none',
               color: '#F5F5F5', fontSize: '16px', outline: 'none',
-              WebkitAppearance: 'none',
+              WebkitAppearance: 'none' as any,
             }}
           />
           <motion.button
