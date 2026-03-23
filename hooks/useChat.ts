@@ -45,10 +45,12 @@ export function useChat(profile: UserProfile | null) {
   }, [profile?.name]);
 
   useEffect(() => {
-  if (messagesEndRef.current) {
-    messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-}, [messages, loading]);
+    // Don't scroll on initial message load
+    if (messages.length <= 1) return;
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [messages, loading]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return;

@@ -56,7 +56,6 @@ export default function AiHome({ profile, onNavigate }: AiHomeProps) {
   const [quickLogText, setQuickLogText] = useState('');
   const [logSaving, setLogSaving] = useState(false);
   const scanRefs = useRef<Record<string, HTMLInputElement | null>>({});
-  const photoRef = useRef<HTMLInputElement>(null);
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -66,8 +65,6 @@ export default function AiHome({ profile, onNavigate }: AiHomeProps) {
   };
 
   const scoreColor = healthScore >= 75 ? '#22C55E' : healthScore >= 50 ? '#EAB308' : '#EF4444';
-  const circumference = 2 * Math.PI * 70;
-  const offset = circumference - (healthScore / 100) * circumference;
 
   const handleSend = () => {
     if (!inputValue.trim()) return;
@@ -125,35 +122,35 @@ export default function AiHome({ profile, onNavigate }: AiHomeProps) {
   };
 
   const quickLogTypes = [
-    { type: 'meal', label: 'Meal', emoji: '🍽️', placeholder: 'e.g. Chicken 200g, rice, salad...', color: 'rgba(249,115,22,0.15)' },
-    { type: 'sleep', label: 'Sleep', emoji: '😴', placeholder: 'e.g. 7h, felt rested...', color: 'rgba(168,85,247,0.15)' },
-    { type: 'energy', label: 'Energy', emoji: '⚡', placeholder: 'e.g. Energy 8/10...', color: 'rgba(234,179,8,0.15)' },
-    { type: 'supplement', label: 'Supplement', emoji: '💊', placeholder: 'e.g. Vitamin D3 5000IU...', color: 'rgba(34,197,94,0.15)' },
+    { type: 'meal', label: 'Meal', emoji: '🍽️', placeholder: 'e.g. Chicken 200g, rice, salad...', color: 'rgba(249,115,22,0.12)' },
+    { type: 'sleep', label: 'Sleep', emoji: '😴', placeholder: 'e.g. 7h, felt rested...', color: 'rgba(168,85,247,0.12)' },
+    { type: 'energy', label: 'Energy', emoji: '⚡', placeholder: 'e.g. Energy 8/10...', color: 'rgba(234,179,8,0.12)' },
+    { type: 'supplement', label: 'Supplement', emoji: '💊', placeholder: 'e.g. Vitamin D3 5000IU...', color: 'rgba(34,197,94,0.12)' },
   ];
 
   const scanOptions = [
     { label: 'Food Photo', sub: 'AI estimates calories', type: 'food', emoji: '📷', color: 'rgba(249,115,22,0.1)' },
     { label: 'Product Label', sub: 'Nutrition facts', type: 'label', emoji: '🏷️', color: 'rgba(59,130,246,0.1)' },
-    { label: 'Supplement', sub: 'Dosage & interactions', type: 'supplement', emoji: '💊', color: 'rgba(34,197,94,0.1)' },
+    { label: 'Supplement', sub: 'Dosage & info', type: 'supplement', emoji: '💊', color: 'rgba(34,197,94,0.1)' },
     { label: 'Medication', sub: 'Drug information', type: 'supplement', emoji: '💉', color: 'rgba(168,85,247,0.1)' },
   ];
 
   return (
-    <div style={{ backgroundColor: '#0A0A0A', minHeight: '100dvh', color: '#F5F5F5', overflowY: 'auto' }}>
+    <div style={{ backgroundColor: '#0A0A0A', color: '#F5F5F5', overflowY: 'auto', minHeight: '100dvh' }}>
       <div style={{ maxWidth: '640px', margin: '0 auto', padding: '40px 20px 120px' }}>
 
         {/* ── HERO ── */}
-        <section style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '28px', marginBottom: '48px' }}>
+        <section style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '24px', marginBottom: '40px' }}>
 
-          {/* Glowing Orb */}
-          <div style={{ position: 'relative', width: '160px', height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {/* Orb */}
+          <div style={{ position: 'relative', width: '140px', height: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <motion.div
-              style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'radial-gradient(circle, rgba(34,197,94,0.2), rgba(59,130,246,0.1))', filter: 'blur(32px)' }}
-              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
+              style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'radial-gradient(circle, rgba(34,197,94,0.25), rgba(59,130,246,0.1))', filter: 'blur(28px)' }}
+              animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.7, 0.4] }}
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
             />
             <motion.div
-              style={{ position: 'relative', width: '112px', height: '112px', borderRadius: '50%', background: 'linear-gradient(135deg, #22C55E, #3B82F6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px' }}
+              style={{ position: 'relative', width: '100px', height: '100px', borderRadius: '50%', background: 'linear-gradient(135deg, #22C55E, #3B82F6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '36px' }}
               animate={{ boxShadow: ['0 0 40px rgba(34,197,94,0.4)', '0 0 60px rgba(59,130,246,0.4)', '0 0 40px rgba(34,197,94,0.4)'] }}
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
               ✦
@@ -162,7 +159,7 @@ export default function AiHome({ profile, onNavigate }: AiHomeProps) {
 
           {/* Greeting */}
           <div>
-            <h1 style={{ fontSize: '32px', fontWeight: 600, letterSpacing: '-0.03em', marginBottom: '6px' }}>
+            <h1 style={{ fontSize: '30px', fontWeight: 600, letterSpacing: '-0.03em', marginBottom: '6px' }}>
               {greeting()}{profile?.name ? `, ${profile.name}` : ''}
             </h1>
             <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '15px' }}>
@@ -181,11 +178,11 @@ export default function AiHome({ profile, onNavigate }: AiHomeProps) {
           <div style={{ width: '100%', maxWidth: '520px' }}>
             <div style={{ ...glass, padding: '8px', display: 'flex', alignItems: 'center', gap: '8px', borderRadius: '32px' }}>
               <button onClick={() => { setShowQuickLog(!showQuickLog); setShowScan(false); }}
-                style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.07)', border: 'none', color: 'rgba(255,255,255,0.6)', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
+                style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: showQuickLog ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.07)', border: 'none', color: showQuickLog ? '#22C55E' : 'rgba(255,255,255,0.6)', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer', transition: 'all 0.2s' }}>
                 ＋
               </button>
               <button onClick={() => { setShowScan(!showScan); setShowQuickLog(false); }}
-                style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.07)', border: 'none', color: 'rgba(255,255,255,0.6)', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
+                style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: showScan ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.07)', border: 'none', color: showScan ? '#3B82F6' : 'rgba(255,255,255,0.6)', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer', transition: 'all 0.2s' }}>
                 📷
               </button>
               <input
@@ -198,110 +195,115 @@ export default function AiHome({ profile, onNavigate }: AiHomeProps) {
               <motion.button
                 whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                 onClick={handleSend} disabled={loading || !inputValue.trim()}
-                style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'linear-gradient(135deg, #22C55E, #3B82F6)', border: 'none', color: '#fff', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer', opacity: loading || !inputValue.trim() ? 0.4 : 1 }}>
+                style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'linear-gradient(135deg, #22C55E, #3B82F6)', border: 'none', color: '#fff', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer', opacity: loading || !inputValue.trim() ? 0.4 : 1, transition: 'opacity 0.2s' }}>
                 {loading ? (
                   <div style={{ width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                 ) : '➤'}
               </motion.button>
             </div>
 
-            {/* Quick Log Sheet */}
+            {/* Quick Log */}
             <AnimatePresence>
               {showQuickLog && (
-                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                  style={{ ...glass, marginTop: '10px', padding: '18px', textAlign: 'left', borderRadius: '24px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <p style={{ fontWeight: 600, fontSize: '14px' }}>Quick Log</p>
-                    <button onClick={() => setShowQuickLog(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '20px', cursor: 'pointer', lineHeight: 1 }}>×</button>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '14px' }}>
-                    {quickLogTypes.map(({ type, label, emoji, color }) => (
-                      <button key={type} onClick={() => setQuickLogType(type)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', borderRadius: '16px', border: `1px solid ${quickLogType === type ? 'rgba(34,197,94,0.5)' : 'rgba(255,255,255,0.07)'}`, backgroundColor: quickLogType === type ? 'rgba(34,197,94,0.1)' : color, cursor: 'pointer', transition: 'all 0.2s' }}>
-                        <span style={{ fontSize: '20px' }}>{emoji}</span>
-                        <span style={{ fontSize: '13px', fontWeight: 500, color: '#F5F5F5' }}>{label}</span>
-                      </button>
-                    ))}
-                  </div>
-                  <AnimatePresence>
-                    {quickLogType && (
-                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-                        <textarea
-                          placeholder={quickLogTypes.find(t => t.type === quickLogType)?.placeholder || ''}
-                          value={quickLogText}
-                          onChange={(e) => setQuickLogText(e.target.value)}
-                          rows={2}
-                          style={{ width: '100%', backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '12px', color: '#F5F5F5', fontSize: '15px', outline: 'none', resize: 'none', marginBottom: '10px' }}
-                        />
-                        <button onClick={handleQuickLog} disabled={logSaving || !quickLogText.trim()}
-                          style={{ width: '100%', padding: '13px', borderRadius: '14px', background: 'linear-gradient(135deg, #22C55E, #16A34A)', border: 'none', color: '#fff', fontWeight: 600, fontSize: '14px', cursor: 'pointer', opacity: logSaving || !quickLogText.trim() ? 0.5 : 1 }}>
-                          {logSaving ? 'Saving...' : 'Save Log'}
+                <motion.div initial={{ opacity: 0, y: -8, height: 0 }} animate={{ opacity: 1, y: 0, height: 'auto' }} exit={{ opacity: 0, y: -8, height: 0 }}
+                  style={{ overflow: 'hidden' }}>
+                  <div style={{ ...glass, marginTop: '10px', padding: '18px', textAlign: 'left' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                      <p style={{ fontWeight: 600, fontSize: '14px' }}>Quick Log</p>
+                      <button onClick={() => { setShowQuickLog(false); setQuickLogType(''); setQuickLogText(''); }}
+                        style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '20px', cursor: 'pointer', lineHeight: 1, padding: '0 4px' }}>×</button>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: quickLogType ? '14px' : '0' }}>
+                      {quickLogTypes.map(({ type, label, emoji, color }) => (
+                        <button key={type} onClick={() => setQuickLogType(quickLogType === type ? '' : type)}
+                          style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', borderRadius: '16px', border: `1px solid ${quickLogType === type ? 'rgba(34,197,94,0.5)' : 'rgba(255,255,255,0.07)'}`, backgroundColor: quickLogType === type ? 'rgba(34,197,94,0.1)' : color, cursor: 'pointer', transition: 'all 0.2s' }}>
+                          <span style={{ fontSize: '20px' }}>{emoji}</span>
+                          <span style={{ fontSize: '13px', fontWeight: 500, color: '#F5F5F5' }}>{label}</span>
                         </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                      ))}
+                    </div>
+                    <AnimatePresence>
+                      {quickLogType && (
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} style={{ overflow: 'hidden' }}>
+                          <textarea
+                            placeholder={quickLogTypes.find(t => t.type === quickLogType)?.placeholder || ''}
+                            value={quickLogText}
+                            onChange={(e) => setQuickLogText(e.target.value)}
+                            rows={2}
+                            style={{ width: '100%', backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '12px', color: '#F5F5F5', fontSize: '15px', outline: 'none', resize: 'none', marginBottom: '10px' }}
+                          />
+                          <button onClick={handleQuickLog} disabled={logSaving || !quickLogText.trim()}
+                            style={{ width: '100%', padding: '13px', borderRadius: '14px', background: 'linear-gradient(135deg, #22C55E, #16A34A)', border: 'none', color: '#fff', fontWeight: 600, fontSize: '14px', cursor: 'pointer', opacity: logSaving || !quickLogText.trim() ? 0.5 : 1 }}>
+                            {logSaving ? 'Saving...' : 'Save Log'}
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Scan Sheet */}
+            {/* Scan */}
             <AnimatePresence>
               {showScan && (
-                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                  style={{ ...glass, marginTop: '10px', padding: '18px', textAlign: 'left', borderRadius: '24px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <p style={{ fontWeight: 600, fontSize: '14px' }}>Scan</p>
-                    <button onClick={() => setShowScan(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '20px', cursor: 'pointer', lineHeight: 1 }}>×</button>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    {scanOptions.map(({ label, sub, type, emoji, color }, i) => {
-                      const refKey = `scan-${i}`;
-                      return (
-                        <div key={i}>
-                          <input
-                            ref={el => { scanRefs.current[refKey] = el; }}
-                            type="file" accept="image/*" capture="environment"
-                            onChange={(e) => handleScanFile(e, type)}
-                            style={{ display: 'none' }}
-                          />
-                          <button onClick={() => scanRefs.current[refKey]?.click()}
-                            style={{ width: '100%', padding: '14px 10px', borderRadius: '16px', backgroundColor: color, border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s' }}>
-                            <p style={{ fontSize: '24px', marginBottom: '6px' }}>{emoji}</p>
-                            <p style={{ fontSize: '12px', fontWeight: 600, color: '#F5F5F5', marginBottom: '2px' }}>{label}</p>
-                            <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>{sub}</p>
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div style={{ marginTop: '12px', padding: '10px 12px', borderRadius: '12px', backgroundColor: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.2)' }}>
-                    <p style={{ fontSize: '11px', color: 'rgba(234,179,8,0.8)', lineHeight: '1.5' }}>⚠️ For reference only. Consult a healthcare professional.</p>
+                <motion.div initial={{ opacity: 0, y: -8, height: 0 }} animate={{ opacity: 1, y: 0, height: 'auto' }} exit={{ opacity: 0, y: -8, height: 0 }}
+                  style={{ overflow: 'hidden' }}>
+                  <div style={{ ...glass, marginTop: '10px', padding: '18px', textAlign: 'left' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                      <p style={{ fontWeight: 600, fontSize: '14px' }}>Scan</p>
+                      <button onClick={() => setShowScan(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '20px', cursor: 'pointer', lineHeight: 1, padding: '0 4px' }}>×</button>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                      {scanOptions.map(({ label, sub, type, emoji, color }, i) => {
+                        const refKey = `scan-${i}`;
+                        return (
+                          <div key={i}>
+                            <input ref={el => { scanRefs.current[refKey] = el; }}
+                              type="file" accept="image/*" capture="environment"
+                              onChange={(e) => handleScanFile(e, type)} style={{ display: 'none' }} />
+                            <button onClick={() => scanRefs.current[refKey]?.click()}
+                              style={{ width: '100%', padding: '14px 10px', borderRadius: '16px', backgroundColor: color, border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s' }}>
+                              <p style={{ fontSize: '24px', marginBottom: '6px' }}>{emoji}</p>
+                              <p style={{ fontSize: '12px', fontWeight: 600, color: '#F5F5F5', marginBottom: '2px' }}>{label}</p>
+                              <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>{sub}</p>
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div style={{ marginTop: '12px', padding: '10px 12px', borderRadius: '12px', backgroundColor: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.2)' }}>
+                      <p style={{ fontSize: '11px', color: 'rgba(234,179,8,0.8)', lineHeight: '1.5' }}>⚠️ For reference only. Consult a healthcare professional.</p>
+                    </div>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {scanning && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', borderRadius: '14px', backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
-                <div style={{ width: '14px', height: '14px', border: '2px solid rgba(34,197,94,0.3)', borderTopColor: '#22C55E', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                <p style={{ fontSize: '13px', color: '#22C55E' }}>Analyzing...</p>
-              </motion.div>
-            )}
+            {/* Scanning indicator */}
+            <AnimatePresence>
+              {scanning && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', borderRadius: '14px', backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
+                  <div style={{ width: '14px', height: '14px', border: '2px solid rgba(34,197,94,0.3)', borderTopColor: '#22C55E', borderRadius: '50%', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
+                  <p style={{ fontSize: '13px', color: '#22C55E' }}>Analyzing...</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </section>
 
         {/* ── CHAT MESSAGES ── */}
-        <section style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '48px' }}>
+        <section style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '48px' }}>
           <AnimatePresence>
             {messages.map((message, index) => (
               <motion.div key={message.id}
-                initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index < 3 ? index * 0.08 : 0 }}
+                initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25 }}
                 style={{ display: 'flex', justifyContent: message.type === 'user' ? 'flex-end' : 'flex-start' }}>
                 <div style={{ maxWidth: '88%', display: 'flex', flexDirection: 'column', alignItems: message.type === 'user' ? 'flex-end' : 'flex-start', gap: '10px' }}>
                   <div style={{
-                    padding: '14px 18px', fontSize: '14px', lineHeight: '1.65',
+                    padding: '13px 17px', fontSize: '14px', lineHeight: '1.65',
                     borderRadius: message.type === 'user' ? '20px 20px 4px 20px' : '4px 20px 20px 20px',
                     ...(message.type === 'user' ? {
                       background: 'linear-gradient(135deg, #22C55E, #16A34A)',
@@ -318,8 +320,8 @@ export default function AiHome({ profile, onNavigate }: AiHomeProps) {
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                       {message.suggestions.map((s, idx) => (
                         <motion.button key={idx} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                          onClick={() => { sendMessage(s); }}
-                          style={{ padding: '8px 16px', borderRadius: '999px', backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}>
+                          onClick={() => sendMessage(s)}
+                          style={{ padding: '8px 16px', borderRadius: '999px', backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s' }}>
                           {s}
                         </motion.button>
                       ))}
@@ -332,7 +334,7 @@ export default function AiHome({ profile, onNavigate }: AiHomeProps) {
 
           {loading && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', justifyContent: 'flex-start' }}>
-              <div style={{ padding: '14px 18px', borderRadius: '4px 20px 20px 20px', backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ padding: '13px 17px', borderRadius: '4px 20px 20px 20px', backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <div style={{ display: 'flex', gap: '5px' }}>
                   {[0, 1, 2].map(i => (
                     <motion.div key={i} style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.4)' }}
@@ -349,16 +351,15 @@ export default function AiHome({ profile, onNavigate }: AiHomeProps) {
         {/* ── TODAY OVERVIEW ── */}
         <section style={{ marginBottom: '40px' }}>
           <h2 style={{ fontSize: '20px', fontWeight: 600, letterSpacing: '-0.02em', marginBottom: '16px' }}>Today Overview</h2>
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
 
-            {/* Health Score — full width */}
-            <div style={{ ...glass, gridColumn: '1 / -1', padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            {/* Health Score */}
+            <div style={{ ...glass, gridColumn: '1 / -1', padding: '22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
               <div>
                 <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '13px', marginBottom: '8px' }}>Health Score</p>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '52px', fontWeight: 600, color: scoreColor, lineHeight: 1 }}>{healthScore}</span>
-                  <span style={{ fontSize: '20px', color: 'rgba(255,255,255,0.25)' }}>/100</span>
+                  <span style={{ fontSize: '48px', fontWeight: 600, color: scoreColor, lineHeight: 1 }}>{healthScore}</span>
+                  <span style={{ fontSize: '18px', color: 'rgba(255,255,255,0.25)' }}>/100</span>
                 </div>
                 <p style={{ fontSize: '12px', color: scoreColor }}>
                   {healthScore === 0 ? 'Log meals, sleep & supplements' :
@@ -366,14 +367,14 @@ export default function AiHome({ profile, onNavigate }: AiHomeProps) {
                    healthScore >= 50 ? '↑ Keep going' : 'Log more to improve'}
                 </p>
               </div>
-              <div style={{ position: 'relative', width: '120px', height: '120px', flexShrink: 0 }}>
-                <svg width="120" height="120" style={{ transform: 'rotate(-90deg)' }}>
-                  <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="8" />
-                  <motion.circle cx="60" cy="60" r="50" fill="none"
+              <div style={{ position: 'relative', width: '110px', height: '110px', flexShrink: 0 }}>
+                <svg width="110" height="110" style={{ transform: 'rotate(-90deg)' }}>
+                  <circle cx="55" cy="55" r="46" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="8" />
+                  <motion.circle cx="55" cy="55" r="46" fill="none"
                     stroke={scoreColor} strokeWidth="8" strokeLinecap="round"
-                    strokeDasharray={2 * Math.PI * 50}
-                    initial={{ strokeDashoffset: 2 * Math.PI * 50 }}
-                    animate={{ strokeDashoffset: 2 * Math.PI * 50 * (1 - healthScore / 100) }}
+                    strokeDasharray={2 * Math.PI * 46}
+                    initial={{ strokeDashoffset: 2 * Math.PI * 46 }}
+                    animate={{ strokeDashoffset: 2 * Math.PI * 46 * (1 - healthScore / 100) }}
                     transition={{ duration: 1.5, ease: 'easeOut' }}
                     style={{ filter: `drop-shadow(0 0 6px ${scoreColor})` }} />
                 </svg>
@@ -381,49 +382,48 @@ export default function AiHome({ profile, onNavigate }: AiHomeProps) {
             </div>
 
             {/* Sleep */}
-            <div style={{ ...glass, padding: '18px' }}>
+            <div style={{ ...glass, padding: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: 'rgba(168,85,247,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>😴</div>
-                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>Last night</span>
+                <div style={{ width: '38px', height: '38px', borderRadius: '12px', backgroundColor: 'rgba(168,85,247,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '17px' }}>😴</div>
+                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>Last night</span>
               </div>
-              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', marginBottom: '4px' }}>Sleep</p>
-              <p style={{ fontSize: '20px', fontWeight: 600, marginBottom: '10px' }}>{todayStats.sleep ? 'Logged ✓' : 'Not logged'}</p>
-              <div style={{ height: '4px', backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: '2px', overflow: 'hidden' }}>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', marginBottom: '4px' }}>Sleep</p>
+              <p style={{ fontSize: '18px', fontWeight: 600, marginBottom: '10px' }}>{todayStats.sleep ? 'Logged ✓' : 'Not logged'}</p>
+              <div style={{ height: '3px', backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: '2px', overflow: 'hidden' }}>
                 <motion.div style={{ height: '100%', borderRadius: '2px', background: 'linear-gradient(90deg, #A855F7, #3B82F6)' }}
                   initial={{ width: 0 }} animate={{ width: todayStats.sleep ? '85%' : '0%' }} transition={{ duration: 1, delay: 0.3 }} />
               </div>
             </div>
 
             {/* Energy */}
-            <div style={{ ...glass, padding: '18px' }}>
+            <div style={{ ...glass, padding: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: 'rgba(234,179,8,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>⚡</div>
-                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>Today</span>
+                <div style={{ width: '38px', height: '38px', borderRadius: '12px', backgroundColor: 'rgba(234,179,8,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '17px' }}>⚡</div>
+                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>Today</span>
               </div>
-              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', marginBottom: '4px' }}>Energy</p>
-              <p style={{ fontSize: '20px', fontWeight: 600, marginBottom: '10px' }}>{todayStats.energy > 0 ? `${todayStats.energy} log${todayStats.energy > 1 ? 's' : ''}` : 'Not logged'}</p>
-              <div style={{ height: '4px', backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: '2px', overflow: 'hidden' }}>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', marginBottom: '4px' }}>Energy</p>
+              <p style={{ fontSize: '18px', fontWeight: 600, marginBottom: '10px' }}>{todayStats.energy > 0 ? `${todayStats.energy} log${todayStats.energy > 1 ? 's' : ''}` : 'Not logged'}</p>
+              <div style={{ height: '3px', backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: '2px', overflow: 'hidden' }}>
                 <motion.div style={{ height: '100%', borderRadius: '2px', background: 'linear-gradient(90deg, #EAB308, #F97316)' }}
                   initial={{ width: 0 }} animate={{ width: todayStats.energy > 0 ? '75%' : '0%' }} transition={{ duration: 1, delay: 0.4 }} />
               </div>
             </div>
 
-            {/* Supplements — full width */}
-            <div style={{ ...glass, gridColumn: '1 / -1', padding: '18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: 'rgba(34,197,94,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>💊</div>
+            {/* Supplements */}
+            <div style={{ ...glass, gridColumn: '1 / -1', padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '12px', backgroundColor: 'rgba(34,197,94,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '17px' }}>💊</div>
                 <div>
-                  <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', marginBottom: '2px' }}>Supplements</p>
-                  <p style={{ fontSize: '16px', fontWeight: 600 }}>
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', marginBottom: '2px' }}>Supplements</p>
+                  <p style={{ fontSize: '15px', fontWeight: 600 }}>
                     {todayStats.supplementsTotal === 0 ? 'None added yet' : `${todayStats.supplementsTaken} of ${todayStats.supplementsTotal} taken`}
                   </p>
                 </div>
               </div>
               {todayStats.supplementsTotal > 0 && (
-                <div style={{ display: 'flex', gap: '6px' }}>
+                <div style={{ display: 'flex', gap: '5px' }}>
                   {Array.from({ length: Math.min(todayStats.supplementsTotal, 8) }).map((_, i) => (
-                    <motion.div key={i} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: i * 0.08 }}
-                      style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: i < todayStats.supplementsTaken ? '#22C55E' : 'rgba(255,255,255,0.1)', boxShadow: i < todayStats.supplementsTaken ? '0 0 6px rgba(34,197,94,0.6)' : 'none' }} />
+                    <div key={i} style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: i < todayStats.supplementsTaken ? '#22C55E' : 'rgba(255,255,255,0.1)', boxShadow: i < todayStats.supplementsTaken ? '0 0 6px rgba(34,197,94,0.6)' : 'none', transition: 'all 0.3s' }} />
                   ))}
                 </div>
               )}
@@ -433,7 +433,7 @@ export default function AiHome({ profile, onNavigate }: AiHomeProps) {
 
         {/* ── SMART ACTIONS ── */}
         <section>
-          <h2 style={{ fontSize: '20px', fontWeight: 600, letterSpacing: '-0.02em', marginBottom: '16px' }}>Smart Actions</h2>
+          <h2 style={{ fontSize: '20px', fontWeight: 600, letterSpacing: '-0.02em', marginBottom: '14px' }}>Smart Actions</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {[
               { emoji: '🍽️', label: 'Log meal', sub: `${todayStats.meals} logged today`, bg: 'rgba(249,115,22,0.1)', action: () => { setQuickLogType('meal'); setShowQuickLog(true); window.scrollTo({ top: 0, behavior: 'smooth' }); } },
@@ -441,14 +441,14 @@ export default function AiHome({ profile, onNavigate }: AiHomeProps) {
               { emoji: '💊', label: 'Supplements', sub: `${todayStats.supplementsTaken}/${todayStats.supplementsTotal} taken today`, bg: 'rgba(34,197,94,0.1)', action: () => onNavigate('profile') },
               { emoji: '📋', label: 'View all logs', sub: 'See today\'s full history', bg: 'rgba(59,130,246,0.1)', action: () => onNavigate('log') },
             ].map(({ emoji, label, sub, bg, action }, i) => (
-              <motion.button key={i} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
+              <motion.button key={i} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
                 onClick={action}
-                style={{ ...glass, padding: '16px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '14px', backgroundColor: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>
+                style={{ ...glass, padding: '15px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', textAlign: 'left', width: '100%' }}>
+                <div style={{ width: '46px', height: '46px', borderRadius: '14px', backgroundColor: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '21px', flexShrink: 0 }}>
                   {emoji}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '15px', fontWeight: 600, color: '#F5F5F5', marginBottom: '2px' }}>{label}</p>
+                  <p style={{ fontSize: '14px', fontWeight: 600, color: '#F5F5F5', marginBottom: '2px' }}>{label}</p>
                   <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>{sub}</p>
                 </div>
                 <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '20px' }}>›</span>
