@@ -2,7 +2,6 @@
 
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Moon, Zap, Pill, UtensilsCrossed, BedDouble, Sparkles, Camera, Plus, X } from 'lucide-react';
 import { useChat } from '@/hooks/useChat';
 import { useHealthData } from '@/hooks/useHealthData';
 
@@ -20,7 +19,6 @@ interface AiHomeProps {
   onNavigate: (tab: 'log' | 'profile') => void;
 }
 
-// Markdown renderer
 const renderText = (text: string) => {
   const parts: React.ReactNode[] = [];
   let remaining = text;
@@ -39,6 +37,14 @@ const renderText = (text: string) => {
   return parts.length === 1 ? parts[0] : <>{parts}</>;
 };
 
+const glass = {
+  backgroundColor: 'rgba(255,255,255,0.05)',
+  backdropFilter: 'blur(24px)',
+  WebkitBackdropFilter: 'blur(24px)',
+  border: '1px solid rgba(255,255,255,0.08)',
+  borderRadius: '24px',
+};
+
 export default function AiHome({ profile, onNavigate }: AiHomeProps) {
   const { messages, loading, sendMessage, messagesEndRef } = useChat(profile);
   const { healthScore, streak, todayStats, refresh } = useHealthData();
@@ -49,7 +55,8 @@ export default function AiHome({ profile, onNavigate }: AiHomeProps) {
   const [quickLogType, setQuickLogType] = useState('');
   const [quickLogText, setQuickLogText] = useState('');
   const [logSaving, setLogSaving] = useState(false);
-  const scanFileRef = useRef<HTMLInputElement>(null);
+  const scanRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const photoRef = useRef<HTMLInputElement>(null);
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -66,10 +73,6 @@ export default function AiHome({ profile, onNavigate }: AiHomeProps) {
     if (!inputValue.trim()) return;
     sendMessage(inputValue);
     setInputValue('');
-  };
-
-  const handleSuggestion = (s: string) => {
-    sendMessage(s);
   };
 
   const handleQuickLog = async () => {
@@ -109,9 +112,9 @@ export default function AiHome({ profile, onNavigate }: AiHomeProps) {
           body: JSON.stringify({ type: scanType === 'food' ? 'meal' : 'supplement', data: { note: data.result, timestamp: new Date().toISOString() } }),
         });
         refresh();
-        sendMessage(`I just scanned and logged: ${data.result.slice(0, 100)}...`);
+        sendMessage(`I scanned and logged: ${data.result.slice(0, 100)}`);
       } else {
-        sendMessage(data.message || 'Could not analyze the image. Please try again.');
+        sendMessage(data.message || 'Could not analyze the image.');
       }
     } catch {
       sendMessage('Scan failed. Please try again.');
@@ -122,126 +125,121 @@ export default function AiHome({ profile, onNavigate }: AiHomeProps) {
   };
 
   const quickLogTypes = [
-    { type: 'meal', label: 'Meal', icon: UtensilsCrossed, color: 'from-orange-500/20 to-red-500/20', iconColor: 'text-orange-400', placeholder: 'e.g. Chicken 200g, rice, salad...' },
-    { type: 'sleep', label: 'Sleep', icon: BedDouble, color: 'from-purple-500/20 to-blue-500/20', iconColor: 'text-purple-400', placeholder: 'e.g. 7h, felt rested...' },
-    { type: 'energy', label: 'Energy', icon: Zap, color: 'from-yellow-500/20 to-orange-500/20', iconColor: 'text-yellow-400', placeholder: 'e.g. Energy 8/10, feeling great...' },
-    { type: 'supplement', label: 'Supplement', icon: Pill, color: 'from-green-500/20 to-emerald-500/20', iconColor: 'text-green-400', placeholder: 'e.g. Vitamin D3 5000IU...' },
+    { type: 'meal', label: 'Meal', emoji: '🍽️', placeholder: 'e.g. Chicken 200g, rice, salad...', color: 'rgba(249,115,22,0.15)' },
+    { type: 'sleep', label: 'Sleep', emoji: '😴', placeholder: 'e.g. 7h, felt rested...', color: 'rgba(168,85,247,0.15)' },
+    { type: 'energy', label: 'Energy', emoji: '⚡', placeholder: 'e.g. Energy 8/10...', color: 'rgba(234,179,8,0.15)' },
+    { type: 'supplement', label: 'Supplement', emoji: '💊', placeholder: 'e.g. Vitamin D3 5000IU...', color: 'rgba(34,197,94,0.15)' },
+  ];
+
+  const scanOptions = [
+    { label: 'Food Photo', sub: 'AI estimates calories', type: 'food', emoji: '📷', color: 'rgba(249,115,22,0.1)' },
+    { label: 'Product Label', sub: 'Nutrition facts', type: 'label', emoji: '🏷️', color: 'rgba(59,130,246,0.1)' },
+    { label: 'Supplement', sub: 'Dosage & interactions', type: 'supplement', emoji: '💊', color: 'rgba(34,197,94,0.1)' },
+    { label: 'Medication', sub: 'Drug information', type: 'supplement', emoji: '💉', color: 'rgba(168,85,247,0.1)' },
   ];
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white overflow-y-auto">
-      <div className="max-w-2xl mx-auto px-5 py-10 space-y-10">
+    <div style={{ backgroundColor: '#0A0A0A', minHeight: '100dvh', color: '#F5F5F5', overflowY: 'auto' }}>
+      <div style={{ maxWidth: '640px', margin: '0 auto', padding: '40px 20px 120px' }}>
 
-        {/* ── HERO SECTION ── */}
-        <section className="flex flex-col items-center text-center space-y-8">
+        {/* ── HERO ── */}
+        <section style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '28px', marginBottom: '48px' }}>
 
           {/* Glowing Orb */}
-          <div className="relative w-40 h-40 flex items-center justify-center">
-            <motion.div className="absolute inset-0 rounded-full bg-gradient-to-br from-green-500/20 to-blue-500/20 blur-3xl"
-              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }} />
-            <motion.div className="absolute inset-4 rounded-full bg-gradient-to-br from-green-500/30 to-blue-500/30 blur-2xl"
-              animate={{ scale: [1.2, 1, 1.2], opacity: [0.5, 0.7, 0.5] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }} />
+          <div style={{ position: 'relative', width: '160px', height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <motion.div
-              className="relative w-28 h-28 rounded-full bg-gradient-to-br from-green-400 to-blue-500 shadow-2xl shadow-green-500/50"
-              animate={{ boxShadow: ['0 0 60px rgba(34,197,94,0.5)', '0 0 80px rgba(59,130,246,0.5)', '0 0 60px rgba(34,197,94,0.5)'] }}
+              style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'radial-gradient(circle, rgba(34,197,94,0.2), rgba(59,130,246,0.1))', filter: 'blur(32px)' }}
+              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.div
+              style={{ position: 'relative', width: '112px', height: '112px', borderRadius: '50%', background: 'linear-gradient(135deg, #22C55E, #3B82F6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px' }}
+              animate={{ boxShadow: ['0 0 40px rgba(34,197,94,0.4)', '0 0 60px rgba(59,130,246,0.4)', '0 0 40px rgba(34,197,94,0.4)'] }}
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
-              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Sparkles className="w-10 h-10 text-white/90" />
-              </div>
+              ✦
             </motion.div>
           </div>
 
           {/* Greeting */}
-          <div className="space-y-1">
-            <h1 className="text-3xl font-semibold tracking-tight">
+          <div>
+            <h1 style={{ fontSize: '32px', fontWeight: 600, letterSpacing: '-0.03em', marginBottom: '6px' }}>
               {greeting()}{profile?.name ? `, ${profile.name}` : ''}
             </h1>
-            <p className="text-base text-white/50">
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '15px' }}>
               {healthScore === 0 ? 'Start logging to see your health score' :
                healthScore >= 75 ? 'Your health looks great today' :
-               healthScore >= 50 ? 'Your health is on track' :
                'Let\'s improve your health today'}
             </p>
             {streak > 0 && (
-              <div className="flex items-center justify-center gap-1.5 mt-2">
-                <span>🔥</span>
-                <span className="text-sm text-orange-400 font-medium">{streak} day streak</span>
-              </div>
+              <p style={{ color: '#F97316', fontSize: '13px', marginTop: '6px', fontWeight: 500 }}>
+                🔥 {streak} day streak
+              </p>
             )}
           </div>
 
-          {/* Smart Input Bar */}
-          <div className="w-full max-w-lg">
-            <div className="relative backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-2 shadow-2xl">
-              <div className="flex items-center gap-2 px-3">
-                <button onClick={() => { setShowQuickLog(!showQuickLog); setShowScan(false); }}
-                  className="w-9 h-9 rounded-full bg-white/8 hover:bg-white/12 flex items-center justify-center transition-all flex-shrink-0">
-                  <Plus className="w-4 h-4 text-white/60" />
-                </button>
-                <button onClick={() => { setShowScan(!showScan); setShowQuickLog(false); }}
-                  className="w-9 h-9 rounded-full bg-white/8 hover:bg-white/12 flex items-center justify-center transition-all flex-shrink-0">
-                  <Camera className="w-4 h-4 text-white/60" />
-                </button>
-                <input
-                  type="text" value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                  placeholder="Ask me anything about your health..."
-                  className="flex-1 bg-transparent py-4 text-white placeholder:text-white/30 focus:outline-none text-sm"
-                  style={{ fontSize: '16px' }}
-                />
-                <motion.button
-                  whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                  onClick={handleSend} disabled={loading || !inputValue.trim()}
-                  className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center flex-shrink-0 disabled:opacity-40">
-                  {loading ? (
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4 text-white" />
-                  )}
-                </motion.button>
-              </div>
+          {/* Smart Input */}
+          <div style={{ width: '100%', maxWidth: '520px' }}>
+            <div style={{ ...glass, padding: '8px', display: 'flex', alignItems: 'center', gap: '8px', borderRadius: '32px' }}>
+              <button onClick={() => { setShowQuickLog(!showQuickLog); setShowScan(false); }}
+                style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.07)', border: 'none', color: 'rgba(255,255,255,0.6)', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
+                ＋
+              </button>
+              <button onClick={() => { setShowScan(!showScan); setShowQuickLog(false); }}
+                style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.07)', border: 'none', color: 'rgba(255,255,255,0.6)', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
+                📷
+              </button>
+              <input
+                type="text" value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                placeholder="Ask me anything about your health..."
+                style={{ flex: 1, backgroundColor: 'transparent', border: 'none', color: '#F5F5F5', fontSize: '15px', outline: 'none', padding: '8px 4px' }}
+              />
+              <motion.button
+                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                onClick={handleSend} disabled={loading || !inputValue.trim()}
+                style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'linear-gradient(135deg, #22C55E, #3B82F6)', border: 'none', color: '#fff', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer', opacity: loading || !inputValue.trim() ? 0.4 : 1 }}>
+                {loading ? (
+                  <div style={{ width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                ) : '➤'}
+              </motion.button>
             </div>
 
             {/* Quick Log Sheet */}
             <AnimatePresence>
               {showQuickLog && (
-                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                  className="mt-3 backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-5 text-left">
-                  <div className="flex justify-between items-center mb-4">
-                    <p className="font-semibold text-sm">Quick Log</p>
-                    <button onClick={() => setShowQuickLog(false)}><X className="w-4 h-4 text-white/40" /></button>
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                  style={{ ...glass, marginTop: '10px', padding: '18px', textAlign: 'left', borderRadius: '24px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                    <p style={{ fontWeight: 600, fontSize: '14px' }}>Quick Log</p>
+                    <button onClick={() => setShowQuickLog(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '20px', cursor: 'pointer', lineHeight: 1 }}>×</button>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 mb-4">
-                    {quickLogTypes.map(({ type, label, icon: Icon, color, iconColor }) => (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '14px' }}>
+                    {quickLogTypes.map(({ type, label, emoji, color }) => (
                       <button key={type} onClick={() => setQuickLogType(type)}
-                        className={`flex items-center gap-3 p-3 rounded-2xl transition-all border ${quickLogType === type ? 'border-green-500/50 bg-green-500/10' : 'border-white/8 bg-white/3 hover:bg-white/6'}`}>
-                        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center`}>
-                          <Icon className={`w-4 h-4 ${iconColor}`} />
-                        </div>
-                        <span className="text-sm font-medium">{label}</span>
+                        style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', borderRadius: '16px', border: `1px solid ${quickLogType === type ? 'rgba(34,197,94,0.5)' : 'rgba(255,255,255,0.07)'}`, backgroundColor: quickLogType === type ? 'rgba(34,197,94,0.1)' : color, cursor: 'pointer', transition: 'all 0.2s' }}>
+                        <span style={{ fontSize: '20px' }}>{emoji}</span>
+                        <span style={{ fontSize: '13px', fontWeight: 500, color: '#F5F5F5' }}>{label}</span>
                       </button>
                     ))}
                   </div>
-                  {quickLogType && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                      <textarea
-                        placeholder={quickLogTypes.find(t => t.type === quickLogType)?.placeholder || ''}
-                        value={quickLogText}
-                        onChange={(e) => setQuickLogText(e.target.value)}
-                        rows={2}
-                        className="w-full bg-white/5 border border-white/8 rounded-2xl p-3 text-white text-sm placeholder:text-white/30 focus:outline-none resize-none mb-3"
-                        style={{ fontSize: '16px' }}
-                      />
-                      <button onClick={handleQuickLog} disabled={logSaving || !quickLogText.trim()}
-                        className="w-full py-3 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold text-sm disabled:opacity-40">
-                        {logSaving ? 'Saving...' : 'Save Log'}
-                      </button>
-                    </motion.div>
-                  )}
+                  <AnimatePresence>
+                    {quickLogType && (
+                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+                        <textarea
+                          placeholder={quickLogTypes.find(t => t.type === quickLogType)?.placeholder || ''}
+                          value={quickLogText}
+                          onChange={(e) => setQuickLogText(e.target.value)}
+                          rows={2}
+                          style={{ width: '100%', backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '12px', color: '#F5F5F5', fontSize: '15px', outline: 'none', resize: 'none', marginBottom: '10px' }}
+                        />
+                        <button onClick={handleQuickLog} disabled={logSaving || !quickLogText.trim()}
+                          style={{ width: '100%', padding: '13px', borderRadius: '14px', background: 'linear-gradient(135deg, #22C55E, #16A34A)', border: 'none', color: '#fff', fontWeight: 600, fontSize: '14px', cursor: 'pointer', opacity: logSaving || !quickLogText.trim() ? 0.5 : 1 }}>
+                          {logSaving ? 'Saving...' : 'Save Log'}
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -249,38 +247,35 @@ export default function AiHome({ profile, onNavigate }: AiHomeProps) {
             {/* Scan Sheet */}
             <AnimatePresence>
               {showScan && (
-                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                  className="mt-3 backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-5 text-left">
-                  <div className="flex justify-between items-center mb-4">
-                    <p className="font-semibold text-sm">Scan</p>
-                    <button onClick={() => setShowScan(false)}><X className="w-4 h-4 text-white/40" /></button>
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                  style={{ ...glass, marginTop: '10px', padding: '18px', textAlign: 'left', borderRadius: '24px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                    <p style={{ fontWeight: 600, fontSize: '14px' }}>Scan</p>
+                    <button onClick={() => setShowScan(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '20px', cursor: 'pointer', lineHeight: 1 }}>×</button>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { label: 'Food Photo', sub: 'AI estimates calories', type: 'food', icon: '📷', color: 'from-orange-500/20 to-red-500/20' },
-                      { label: 'Product Label', sub: 'Nutrition facts', type: 'label', icon: '🏷️', color: 'from-blue-500/20 to-indigo-500/20' },
-                      { label: 'Supplement', sub: 'Dosage & interactions', type: 'supplement', icon: '💊', color: 'from-green-500/20 to-emerald-500/20' },
-                      { label: 'Medication', sub: 'Drug information', type: 'supplement', icon: '💉', color: 'from-purple-500/20 to-blue-500/20' },
-                    ].map(({ label, sub, type, icon, color }, i) => {
-                      const inputId = `scan-${i}`;
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    {scanOptions.map(({ label, sub, type, emoji, color }, i) => {
+                      const refKey = `scan-${i}`;
                       return (
                         <div key={i}>
-                          <input id={inputId} type="file" accept="image/*" capture="environment"
-                            onChange={(e) => handleScanFile(e, type)} className="hidden" />
-                          <label htmlFor={inputId}
-                            className={`flex flex-col items-center gap-2 p-4 rounded-2xl bg-gradient-to-br ${color} border border-white/8 cursor-pointer hover:border-white/20 transition-all text-center`}>
-                            <span className="text-2xl">{icon}</span>
-                            <div>
-                              <p className="text-sm font-semibold">{label}</p>
-                              <p className="text-xs text-white/50 mt-0.5">{sub}</p>
-                            </div>
-                          </label>
+                          <input
+                            ref={el => { scanRefs.current[refKey] = el; }}
+                            type="file" accept="image/*" capture="environment"
+                            onChange={(e) => handleScanFile(e, type)}
+                            style={{ display: 'none' }}
+                          />
+                          <button onClick={() => scanRefs.current[refKey]?.click()}
+                            style={{ width: '100%', padding: '14px 10px', borderRadius: '16px', backgroundColor: color, border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s' }}>
+                            <p style={{ fontSize: '24px', marginBottom: '6px' }}>{emoji}</p>
+                            <p style={{ fontSize: '12px', fontWeight: 600, color: '#F5F5F5', marginBottom: '2px' }}>{label}</p>
+                            <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>{sub}</p>
+                          </button>
                         </div>
                       );
                     })}
                   </div>
-                  <div className="mt-3 p-3 rounded-2xl bg-yellow-500/8 border border-yellow-500/20">
-                    <p className="text-xs text-yellow-400/80">⚠️ All information is for reference only. Consult a healthcare professional.</p>
+                  <div style={{ marginTop: '12px', padding: '10px 12px', borderRadius: '12px', backgroundColor: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.2)' }}>
+                    <p style={{ fontSize: '11px', color: 'rgba(234,179,8,0.8)', lineHeight: '1.5' }}>⚠️ For reference only. Consult a healthcare professional.</p>
                   </div>
                 </motion.div>
               )}
@@ -288,36 +283,43 @@ export default function AiHome({ profile, onNavigate }: AiHomeProps) {
 
             {scanning && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="mt-3 flex items-center gap-3 px-5 py-3 rounded-2xl bg-green-500/8 border border-green-500/20">
-                <div className="w-4 h-4 border-2 border-green-500/30 border-t-green-500 rounded-full animate-spin" />
-                <p className="text-sm text-green-400">Analyzing...</p>
+                style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', borderRadius: '14px', backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
+                <div style={{ width: '14px', height: '14px', border: '2px solid rgba(34,197,94,0.3)', borderTopColor: '#22C55E', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                <p style={{ fontSize: '13px', color: '#22C55E' }}>Analyzing...</p>
               </motion.div>
             )}
           </div>
         </section>
 
         {/* ── CHAT MESSAGES ── */}
-        <section className="space-y-5">
+        <section style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '48px' }}>
           <AnimatePresence>
             {messages.map((message, index) => (
               <motion.div key={message.id}
-                initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index < 3 ? index * 0.1 : 0 }}
-                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[88%] space-y-3 flex flex-col ${message.type === 'user' ? 'items-end' : 'items-start'}`}>
-                  <div className={`rounded-3xl px-5 py-4 ${
-                    message.type === 'user'
-                      ? 'bg-gradient-to-br from-green-500 to-green-600 text-white'
-                      : 'backdrop-blur-xl bg-white/5 border border-white/10'
-                  }`} style={{ borderRadius: message.type === 'user' ? '20px 20px 4px 20px' : '4px 20px 20px 20px' }}>
-                    <p className="text-white/90 leading-relaxed text-sm">{renderText(message.text)}</p>
+                initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index < 3 ? index * 0.08 : 0 }}
+                style={{ display: 'flex', justifyContent: message.type === 'user' ? 'flex-end' : 'flex-start' }}>
+                <div style={{ maxWidth: '88%', display: 'flex', flexDirection: 'column', alignItems: message.type === 'user' ? 'flex-end' : 'flex-start', gap: '10px' }}>
+                  <div style={{
+                    padding: '14px 18px', fontSize: '14px', lineHeight: '1.65',
+                    borderRadius: message.type === 'user' ? '20px 20px 4px 20px' : '4px 20px 20px 20px',
+                    ...(message.type === 'user' ? {
+                      background: 'linear-gradient(135deg, #22C55E, #16A34A)',
+                      color: '#fff', boxShadow: '0 4px 20px rgba(34,197,94,0.2)'
+                    } : {
+                      backgroundColor: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      backdropFilter: 'blur(16px)', color: '#F5F5F5',
+                    })
+                  }}>
+                    {renderText(message.text)}
                   </div>
                   {message.suggestions && message.suggestions.length > 0 && index === messages.length - 1 && !loading && (
-                    <div className="flex flex-wrap gap-2">
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                       {message.suggestions.map((s, idx) => (
                         <motion.button key={idx} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                          onClick={() => handleSuggestion(s)}
-                          className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs text-white/70 hover:bg-white/10 hover:text-white transition-all backdrop-blur-xl font-medium">
+                          onClick={() => { sendMessage(s); }}
+                          style={{ padding: '8px 16px', borderRadius: '999px', backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}>
                           {s}
                         </motion.button>
                       ))}
@@ -329,11 +331,11 @@ export default function AiHome({ profile, onNavigate }: AiHomeProps) {
           </AnimatePresence>
 
           {loading && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-              <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl px-5 py-4" style={{ borderRadius: '4px 20px 20px 20px' }}>
-                <div className="flex gap-1.5">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', justifyContent: 'flex-start' }}>
+              <div style={{ padding: '14px 18px', borderRadius: '4px 20px 20px 20px', backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ display: 'flex', gap: '5px' }}>
                   {[0, 1, 2].map(i => (
-                    <motion.div key={i} className="w-2 h-2 rounded-full bg-white/40"
+                    <motion.div key={i} style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.4)' }}
                       animate={{ y: [0, -6, 0] }}
                       transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }} />
                   ))}
@@ -345,148 +347,120 @@ export default function AiHome({ profile, onNavigate }: AiHomeProps) {
         </section>
 
         {/* ── TODAY OVERVIEW ── */}
-        <section className="space-y-5">
-          <h2 className="text-xl font-semibold tracking-tight">Today Overview</h2>
+        <section style={{ marginBottom: '40px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 600, letterSpacing: '-0.02em', marginBottom: '16px' }}>Today Overview</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
 
-            {/* Health Score */}
-            <div className="md:col-span-2 backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-7 shadow-2xl">
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <p className="text-white/50 text-sm">Health Score</p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-semibold" style={{ color: scoreColor }}>{healthScore}</span>
-                    <span className="text-xl text-white/30">/100</span>
-                  </div>
-                  <p className="text-xs" style={{ color: scoreColor }}>
-                    {healthScore === 0 ? 'Log meals, sleep & supplements' :
-                     healthScore >= 75 ? '↑ Great job today' :
-                     healthScore >= 50 ? '↑ Keep going' : 'Log more to improve'}
-                  </p>
+            {/* Health Score — full width */}
+            <div style={{ ...glass, gridColumn: '1 / -1', padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '13px', marginBottom: '8px' }}>Health Score</p>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '52px', fontWeight: 600, color: scoreColor, lineHeight: 1 }}>{healthScore}</span>
+                  <span style={{ fontSize: '20px', color: 'rgba(255,255,255,0.25)' }}>/100</span>
                 </div>
-                <div className="relative w-32 h-32">
-                  <svg className="w-full h-full -rotate-90" viewBox="0 0 160 160">
-                    <circle cx="80" cy="80" r="70" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="10" />
-                    <motion.circle cx="80" cy="80" r="70" fill="none"
-                      stroke={scoreColor} strokeWidth="10" strokeLinecap="round"
-                      strokeDasharray={circumference}
-                      initial={{ strokeDashoffset: circumference }}
-                      animate={{ strokeDashoffset: offset }}
-                      transition={{ duration: 1.5, ease: 'easeOut' }}
-                      style={{ filter: `drop-shadow(0 0 8px ${scoreColor})` }} />
-                    <defs>
-                      <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#22c55e" />
-                        <stop offset="100%" stopColor="#3b82f6" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                </div>
+                <p style={{ fontSize: '12px', color: scoreColor }}>
+                  {healthScore === 0 ? 'Log meals, sleep & supplements' :
+                   healthScore >= 75 ? '↑ Great job today' :
+                   healthScore >= 50 ? '↑ Keep going' : 'Log more to improve'}
+                </p>
+              </div>
+              <div style={{ position: 'relative', width: '120px', height: '120px', flexShrink: 0 }}>
+                <svg width="120" height="120" style={{ transform: 'rotate(-90deg)' }}>
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="8" />
+                  <motion.circle cx="60" cy="60" r="50" fill="none"
+                    stroke={scoreColor} strokeWidth="8" strokeLinecap="round"
+                    strokeDasharray={2 * Math.PI * 50}
+                    initial={{ strokeDashoffset: 2 * Math.PI * 50 }}
+                    animate={{ strokeDashoffset: 2 * Math.PI * 50 * (1 - healthScore / 100) }}
+                    transition={{ duration: 1.5, ease: 'easeOut' }}
+                    style={{ filter: `drop-shadow(0 0 6px ${scoreColor})` }} />
+                </svg>
               </div>
             </div>
 
             {/* Sleep */}
-            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-5 shadow-2xl space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center">
-                  <Moon className="w-5 h-5 text-purple-400" />
-                </div>
-                <span className="text-xs text-white/40">Last night</span>
+            <div style={{ ...glass, padding: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: 'rgba(168,85,247,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>😴</div>
+                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>Last night</span>
               </div>
-              <div>
-                <p className="text-white/50 text-xs mb-1">Sleep</p>
-                <p className="text-2xl font-semibold">{todayStats.sleep ? 'Logged ✓' : 'Not logged'}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-1.5 bg-white/8 rounded-full overflow-hidden">
-                  <motion.div className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"
-                    initial={{ width: 0 }} animate={{ width: todayStats.sleep ? '85%' : '0%' }}
-                    transition={{ duration: 1, delay: 0.3 }} />
-                </div>
-                <span className="text-xs text-white/40">{todayStats.sleep ? '85%' : '0%'}</span>
+              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', marginBottom: '4px' }}>Sleep</p>
+              <p style={{ fontSize: '20px', fontWeight: 600, marginBottom: '10px' }}>{todayStats.sleep ? 'Logged ✓' : 'Not logged'}</p>
+              <div style={{ height: '4px', backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: '2px', overflow: 'hidden' }}>
+                <motion.div style={{ height: '100%', borderRadius: '2px', background: 'linear-gradient(90deg, #A855F7, #3B82F6)' }}
+                  initial={{ width: 0 }} animate={{ width: todayStats.sleep ? '85%' : '0%' }} transition={{ duration: 1, delay: 0.3 }} />
               </div>
             </div>
 
             {/* Energy */}
-            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-5 shadow-2xl space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-yellow-400" />
-                </div>
-                <span className="text-xs text-white/40">Today</span>
+            <div style={{ ...glass, padding: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: 'rgba(234,179,8,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>⚡</div>
+                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>Today</span>
               </div>
-              <div>
-                <p className="text-white/50 text-xs mb-1">Energy</p>
-                <p className="text-2xl font-semibold">{todayStats.energy > 0 ? `${todayStats.energy} log${todayStats.energy > 1 ? 's' : ''}` : 'Not logged'}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-1.5 bg-white/8 rounded-full overflow-hidden">
-                  <motion.div className="h-full bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full"
-                    initial={{ width: 0 }} animate={{ width: todayStats.energy > 0 ? '75%' : '0%' }}
-                    transition={{ duration: 1, delay: 0.4 }} />
-                </div>
-                <span className="text-xs text-white/40">{todayStats.energy > 0 ? '75%' : '0%'}</span>
+              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', marginBottom: '4px' }}>Energy</p>
+              <p style={{ fontSize: '20px', fontWeight: 600, marginBottom: '10px' }}>{todayStats.energy > 0 ? `${todayStats.energy} log${todayStats.energy > 1 ? 's' : ''}` : 'Not logged'}</p>
+              <div style={{ height: '4px', backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: '2px', overflow: 'hidden' }}>
+                <motion.div style={{ height: '100%', borderRadius: '2px', background: 'linear-gradient(90deg, #EAB308, #F97316)' }}
+                  initial={{ width: 0 }} animate={{ width: todayStats.energy > 0 ? '75%' : '0%' }} transition={{ duration: 1, delay: 0.4 }} />
               </div>
             </div>
 
-            {/* Supplements */}
-            <div className="md:col-span-2 backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-5 shadow-2xl">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center">
-                    <Pill className="w-5 h-5 text-green-400" />
-                  </div>
-                  <div>
-                    <p className="text-white/50 text-xs">Supplements</p>
-                    <p className="text-lg font-semibold">
-                      {todayStats.supplementsTotal === 0 ? 'None added yet' :
-                       `${todayStats.supplementsTaken} of ${todayStats.supplementsTotal} taken`}
-                    </p>
-                  </div>
+            {/* Supplements — full width */}
+            <div style={{ ...glass, gridColumn: '1 / -1', padding: '18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: 'rgba(34,197,94,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>💊</div>
+                <div>
+                  <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', marginBottom: '2px' }}>Supplements</p>
+                  <p style={{ fontSize: '16px', fontWeight: 600 }}>
+                    {todayStats.supplementsTotal === 0 ? 'None added yet' : `${todayStats.supplementsTaken} of ${todayStats.supplementsTotal} taken`}
+                  </p>
                 </div>
-                {todayStats.supplementsTotal > 0 && (
-                  <div className="flex gap-1.5">
-                    {Array.from({ length: todayStats.supplementsTotal }).map((_, i) => (
-                      <motion.div key={i} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: i * 0.1 }}
-                        className={`w-3 h-3 rounded-full ${i < todayStats.supplementsTaken ? 'bg-gradient-to-br from-green-400 to-emerald-500' : 'bg-white/10'}`} />
-                    ))}
-                  </div>
-                )}
               </div>
+              {todayStats.supplementsTotal > 0 && (
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {Array.from({ length: Math.min(todayStats.supplementsTotal, 8) }).map((_, i) => (
+                    <motion.div key={i} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: i * 0.08 }}
+                      style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: i < todayStats.supplementsTaken ? '#22C55E' : 'rgba(255,255,255,0.1)', boxShadow: i < todayStats.supplementsTaken ? '0 0 6px rgba(34,197,94,0.6)' : 'none' }} />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </section>
 
         {/* ── SMART ACTIONS ── */}
-        <section className="space-y-4 pb-24">
-          <h2 className="text-xl font-semibold tracking-tight">Smart Actions</h2>
-          <div className="grid grid-cols-1 gap-3">
+        <section>
+          <h2 style={{ fontSize: '20px', fontWeight: 600, letterSpacing: '-0.02em', marginBottom: '16px' }}>Smart Actions</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {[
-              { icon: UtensilsCrossed, label: 'Log meal', sub: `${todayStats.meals} logged today`, color: 'from-orange-500/20 to-red-500/20', iconColor: 'text-orange-400', action: () => { setQuickLogType('meal'); setShowQuickLog(true); } },
-              { icon: BedDouble, label: 'Log sleep', sub: todayStats.sleep ? 'Logged ✓' : 'Not logged yet', color: 'from-purple-500/20 to-blue-500/20', iconColor: 'text-purple-400', action: () => { setQuickLogType('sleep'); setShowQuickLog(true); } },
-              { icon: Pill, label: 'Supplements', sub: `${todayStats.supplementsTaken}/${todayStats.supplementsTotal} taken`, color: 'from-green-500/20 to-emerald-500/20', iconColor: 'text-green-400', action: () => onNavigate('profile') },
-            ].map(({ icon: Icon, label, sub, color, iconColor, action }, i) => (
+              { emoji: '🍽️', label: 'Log meal', sub: `${todayStats.meals} logged today`, bg: 'rgba(249,115,22,0.1)', action: () => { setQuickLogType('meal'); setShowQuickLog(true); window.scrollTo({ top: 0, behavior: 'smooth' }); } },
+              { emoji: '😴', label: 'Log sleep', sub: todayStats.sleep ? 'Already logged ✓' : 'Not logged yet', bg: 'rgba(168,85,247,0.1)', action: () => { setQuickLogType('sleep'); setShowQuickLog(true); window.scrollTo({ top: 0, behavior: 'smooth' }); } },
+              { emoji: '💊', label: 'Supplements', sub: `${todayStats.supplementsTaken}/${todayStats.supplementsTotal} taken today`, bg: 'rgba(34,197,94,0.1)', action: () => onNavigate('profile') },
+              { emoji: '📋', label: 'View all logs', sub: 'See today\'s full history', bg: 'rgba(59,130,246,0.1)', action: () => onNavigate('log') },
+            ].map(({ emoji, label, sub, bg, action }, i) => (
               <motion.button key={i} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
                 onClick={action}
-                className="group backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-5 shadow-2xl hover:bg-white/8 transition-all text-left w-full">
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                    <Icon className={`w-6 h-6 ${iconColor}`} />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-base font-semibold mb-0.5">{label}</h3>
-                    <p className="text-xs text-white/50">{sub}</p>
-                  </div>
-                  <div className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center">
-                    <span className="text-white/40 text-sm">›</span>
-                  </div>
+                style={{ ...glass, padding: '16px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '14px', backgroundColor: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>
+                  {emoji}
                 </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: '15px', fontWeight: 600, color: '#F5F5F5', marginBottom: '2px' }}>{label}</p>
+                  <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>{sub}</p>
+                </div>
+                <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '20px' }}>›</span>
               </motion.button>
             ))}
           </div>
         </section>
       </div>
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 }
