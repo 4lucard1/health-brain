@@ -110,33 +110,36 @@ export default function LogTab() {
     }
   };
 
-  const handlePhotoScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setScanning(true);
-    setScanResult('');
-    setScanError('');
+const handlePhotoScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  setScanning(true);
+  setLogInput('');
+  setScanError('');
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('scanType', 'food');
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('scanType', 'food');
 
-    try {
-      const res = await fetch('/api/scan', { method: 'POST', body: formData });
-      const data = await res.json();
-      if (data.result) {
-        setLogInput(data.result);
-        setLogType('meal');
-      } else {
-        setScanError(data.message || 'Nije moguće prepoznati hranu.');
-      }
-    } catch {
-      setScanError('Greška pri analizi.');
-    } finally {
-      setScanning(false);
-      if (e.target) e.target.value = '';
+  try {
+    const res = await fetch('/api/scan', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.result) {
+      setLogInput(data.result);
+      setLogType('meal');
+      setScanError('');
+    } else {
+      setScanError(data.message || 'Could not analyze image. Please take a photo of food.');
+      setLogInput('');
     }
-  };
+  } catch {
+    setScanError('Error analyzing photo. Please try again.');
+    setLogInput('');
+  } finally {
+    setScanning(false);
+    if (e.target) e.target.value = '';
+  }
+};
 
   const saveScanAsLog = async () => {
     const note = scanResult || manualInput;
@@ -311,7 +314,20 @@ export default function LogTab() {
             </motion.div>
           )}
         </AnimatePresence>
-
+{/* Photo scan error */}
+<AnimatePresence>
+  {scanError && !showScanSheet && (
+    <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+      style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '12px', padding: '12px 14px', marginBottom: '12px', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+      <span style={{ fontSize: '16px', flexShrink: 0 }}>⚠️</span>
+      <div>
+        <p style={{ fontSize: '13px', color: '#EF4444', fontWeight: 600, marginBottom: '2px' }}>Photo not recognized</p>
+        <p style={{ fontSize: '12px', color: '#9CA3AF', lineHeight: '1.5' }}>{scanError}</p>
+      </div>
+      <button onClick={() => setScanError('')} style={{ background: 'none', border: 'none', color: '#6B7280', cursor: 'pointer', fontSize: '16px', marginLeft: 'auto', flexShrink: 0 }}>×</button>
+    </motion.div>
+  )}
+</AnimatePresence>
         {/* Log type selector */}
         <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', overflowX: 'auto', paddingBottom: '2px' }}>
           {logTypes.map(({ type, label, emoji }) => (
